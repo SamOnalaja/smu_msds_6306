@@ -1,0 +1,53 @@
+---
+title: "Beers_Analysis"
+author: "Sachin Chavan"
+date: "10/13/2019"
+output: html_document
+---
+
+### Load follwing libraries
+
+* 1 - ggplot2 - visualizations
+* 2 - tidyverse
+* 3 - naniar and visdat - visualizations for missing data
+* 4 - mice - Imputation
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(tidyverse)
+library(naniar)
+library(visdat)
+library(mice) # 
+library(VIM)
+library(lattice)
+```
+
+### Load data into memory from csv 
+
+```{r}
+breweries_ds <- read.csv('data/Breweries.csv',header = TRUE)
+beers_ds    <- read.csv('data/Beers.csv'    ,header = TRUE)
+#beers_ds %>% arrange(desc(Style),Name)
+#beers_ds %>% ggplot(aes(x=ABV,y=IBU,color=Style))+geom_point(show.legend = FALSE)
+
+```
+
+### Structures of the datasets
+
+```{r}
+str(breweris_ds)
+str(beers_ds)
+beers_ds %>% group_by(Style) %>%  count(IBU,Style) %>% arrange(Style) %>% select(Style,IBU)
+```
+
+### Missing Values
+
+```{r}
+vis_dat(breweris_ds,palette = "qual")
+vis_dat(beers_ds,palette = "qual")
+str(beers_ds)
+beers_ds %>% filter(!is.na(IBU)) %>% ggplot(aes(x=ABV))+geom_histogram(bins=30)
+```
+
