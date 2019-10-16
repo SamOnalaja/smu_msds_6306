@@ -7,10 +7,10 @@ output: html_document
 
 ### Load follwing libraries
 
-* 1 - ggplot2 - visualizations
-* 2 - tidyverse
-* 3 - naniar and visdat - visualizations for missing data
-* 4 - mice - Imputation
+*  ggplot2 - visualizations
+*  tidyverse
+*  naniar and visdat - visualizations for missing data
+*  mice - Imputation
 
 
 ```{r setup, include=FALSE}
@@ -19,35 +19,64 @@ library(ggplot2)
 library(tidyverse)
 library(naniar)
 library(visdat)
-library(mice) # 
+library(GGally)
+library(mice)  
 library(VIM)
 library(lattice)
+library(maps)
+library(treemapify)
 ```
 
 ### Load data into memory from csv 
 
-```{r}
-breweries_ds <- read.csv('data/Breweries.csv',header = TRUE)
-beers_ds    <- read.csv('data/Beers.csv'    ,header = TRUE)
-#beers_ds %>% arrange(desc(Style),Name)
-#beers_ds %>% ggplot(aes(x=ABV,y=IBU,color=Style))+geom_point(show.legend = FALSE)
+*  Load Breweries from csv
+*  Load Beers from csv 
+*  Merge Breweries and Beers
+*  Rename Names column after merging two datasets
 
+```{r dpi=100}
+breweries_ds <- read.csv('data/Breweries.csv',header = TRUE)
+beers_ds     <- read.csv('data/Beers.csv'    ,header = TRUE)
+bmerged_ds   <- merge(breweries_ds,beers_ds,by.x="Brew_ID",by.y="Brewery_id")
+names(bmerged_ds)[2] <- "BreweryName"
+names(bmerged_ds)[5] <- "BeerName"
 ```
 
 ### Structures of the datasets
+* breweris_ds - Breweries in USA
+* beers_ds    - Different beer styles with ABV and IBU
 
 ```{r}
-str(breweris_ds)
+str(breweries_ds)
 str(beers_ds)
-beers_ds %>% group_by(Style) %>%  count(IBU,Style) %>% arrange(Style) %>% select(Style,IBU)
+str(bmerged_ds)
+```
+
+### Summary Statistics of both datasets
+* breweris_ds - Breweries in USA
+* beers_ds    - Different beer styles with ABV and IBU
+
+```{r}
+summary(breweries_ds)
+summary(beers_ds)
+summary(bmerged_ds)
+```
+
+### Visual Summary
+* Check distributions
+
+```{r}
+
+
 ```
 
 ### Missing Values
+* breweris_ds - Breweries in USA
+* beers_ds    - Different beer styles with ABV and IBU
 
 ```{r}
-vis_dat(breweris_ds,palette = "qual")
+vis_dat(breweries_ds,palette = "qual")
 vis_dat(beers_ds,palette = "qual")
-str(beers_ds)
-beers_ds %>% filter(!is.na(IBU)) %>% ggplot(aes(x=ABV))+geom_histogram(bins=30)
 ```
+
 
