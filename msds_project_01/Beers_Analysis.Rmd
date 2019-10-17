@@ -1,4 +1,3 @@
----
 title: "Beers_Analysis"
 author: "Sachin Chavan"
 date: "10/13/2019"
@@ -16,6 +15,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
+library(ggthemes)
 library(tidyverse)
 library(naniar)
 library(visdat)
@@ -23,7 +23,7 @@ library(GGally)
 library(mice)  
 library(VIM)
 library(lattice)
-library(maps)
+library(ggmap)
 library(treemapify)
 ```
 
@@ -43,8 +43,9 @@ names(bmerged_ds)[5] <- "BeerName"
 ```
 
 ### Structures of the datasets
-* breweris_ds - Breweries in USA
+* breweries_ds - Breweries in USA
 * beers_ds    - Different beer styles with ABV and IBU
+* bmerged_ds  - Merged dataset
 
 ```{r}
 str(breweries_ds)
@@ -52,21 +53,51 @@ str(beers_ds)
 str(bmerged_ds)
 ```
 
+### Merged dataset
+* First and last 10 records from merged set
+```{r}
+head(bmerged_ds)
+tail(bmerged_ds)
+
+```
+
 ### Summary Statistics of both datasets
 * breweris_ds - Breweries in USA
 * beers_ds    - Different beer styles with ABV and IBU
+* bmerged_ds  - Merged dataset
 
 ```{r}
 summary(breweries_ds)
 summary(beers_ds)
 summary(bmerged_ds)
+
 ```
 
 ### Visual Summary
-* Check distributions
+#### Total Breweries per state
 
 ```{r}
 
+b_states <- breweries_ds %>% group_by(State) %>% count() %>% arrange(desc(n))
+b_states$State <- factor(b_states$State, levels = b_states$State) 
+
+ggplot(b_states, aes(x=State, y=n)) + 
+  geom_bar(stat="identity", width=.8, fill="tomato3") + 
+  labs(title="Ordered Bar Chart", 
+       subtitle="State Vs Number of Breweries", 
+       caption="Beer Analysis") + 
+  xlab("State")+
+  ylab("Total Breweries")+
+  theme_wsj()+
+  theme(axis.text.x = element_text(angle=65, vjust=0.6))+  
+  theme(plot.title    = element_text(size = rel(0.5)),
+  plot.subtitle = element_text(size = rel(0.5)),
+  axis.text.x   = element_text(vjust=0.6,size=10),
+  axis.title    = element_text(size = rel(0.5)),
+  legend.position  = "right",
+  legend.direction ="vertical",
+  legend.title = element_text(size = rel(0.2)))
+  
 
 ```
 
@@ -75,8 +106,246 @@ summary(bmerged_ds)
 * beers_ds    - Different beer styles with ABV and IBU
 
 ```{r}
-vis_dat(breweries_ds,palette = "qual")
-vis_dat(beers_ds,palette = "qual")
+vis_dat(bmerged_ds,palette = "qual")
+beer_ounces <- beers_ds
+beer_ounces$Ounces <- as.factor(beer_ounces$Ounces)
+
+gg_miss_var(bmerged_ds,facet=State)+
+  theme_wsj()+
+  theme(axis.text.x = element_text(angle=65, vjust=0.3))+  
+  theme(plot.title    = element_text(size = rel(0.5)),
+  plot.subtitle = element_text(size = rel(0.5)),
+  axis.text.x   = element_text(vjust=0.6,size=8),
+  axis.text.y   = element_text(vjust=0.2,size=4),
+  axis.title    = element_text(size = rel(0.5)),
+  legend.position  = "right",
+  legend.direction ="vertical",
+  legend.title = element_text(size = rel(0.2)))
+
+gg_miss_var(bmerged_ds,facet=Style)+
+  theme_wsj()+
+  theme(axis.text.x = element_text(angle=65, vjust=0.3))+  
+  theme(plot.title    = element_text(size = rel(0.5)),
+  plot.subtitle = element_text(size = rel(0.3)),
+  axis.text.x   = element_text(vjust=0.6,size=8),
+  axis.text.y   = element_text(vjust=0.2,size=4),
+  axis.title    = element_text(size = rel(0.5)),
+  legend.position  = "right",
+  legend.direction ="vertical",
+  legend.title = element_text(size = rel(0.2)))
+
+gg_miss_var(beer_ounces,facet=Ounces)+
+  theme_wsj()+
+  theme(axis.text.x = element_text(angle=65, vjust=0.3))+  
+  theme(plot.title    = element_text(size = rel(0.5)),
+  plot.subtitle = element_text(size = rel(0.5)),
+  axis.text.x   = element_text(vjust=0.6,size=10),
+  axis.text.y   = element_text(vjust=0.2,size=7),
+  axis.title    = element_text(size = rel(0.5)),
+  legend.position  = "right",
+  legend.direction ="vertical",
+  legend.title = element_text(size = rel(0.2)))
+
+```
+### Missing Values continued
+* Missing values by state
+* Missing values by Style
+
+```{r}
+aq_shadow <- bind_shadow(bmerged_ds)
+glimpse(aq_shadow)
+
+bmerged_ds %>%
+  bind_shadow() %>%
+  group_by(IBU_NA) %>%
+  summarise_at(.vars = "ABV",
+               .funs = c("mean", "sd", "var", "min", "max"),
+               na.rm = TRUE)
+
+ggplot(aq_shadow,
+       aes(x = ABV,
+           colour = IBU_NA)) + 
+  geom_density()
+
+ggplot(bmerged_ds, 
+       aes(x = ABV, 
+           y = IBU)) + 
+  geom_miss_point() + 
+  theme_wsj()+
+  theme(axis.text.x = element_text(angle=65, vjust=0.3))+  
+  theme(plot.title    = element_text(size = rel(0.5)),
+  plot.subtitle = element_text(size = rel(0.5)),
+  axis.text.x   = element_text(vjust=0.6,size=8),
+  axis.text.y   = element_text(vjust=0.2,size=8),
+  axis.title    = element_text(size = rel(0.5)),
+  legend.position  = "right",
+  legend.direction ="vertical",
+  legend.title = element_text(size = rel(0.5)))+
+  facet_wrap(~State)
+
+
+
+ggplot(bmerged_ds, 
+       aes(x = ABV, 
+           y = IBU)) + 
+  geom_miss_point() + 
+  theme_wsj()+
+  theme(axis.text.x = element_text(angle=65, vjust=0.3))+  
+  theme(plot.title    = element_text(size = rel(0.3)),
+  plot.subtitle = element_text(size = rel(0.5)),
+  axis.text.x   = element_text(vjust=0.6,size=8),
+  axis.text.y   = element_text(vjust=0.2,size=6),
+  axis.title    = element_text(size = rel(0.5)),
+  legend.position  = "right",
+  legend.direction ="vertical",
+  legend.title = element_text(size = rel(0.5)))+
+  facet_wrap(~Style)
+
+```
+
+### Imputations
+* 62 records doens't have IBU and SBV both - these are deleted
+* Total records to process 2410-62 =  2348
+* Prediction is required on 943 missing IBU
+* Total records with IBU is 1405
+
+```{r}
+
+bmerged_final_ds <- bmerged_ds %>% filter(!is.na(ABV) | !is.na(IBU))
+
+non_missing_ibu <- bmerged_final_ds %>% filter(!is.na(IBU))
+non_missing_ibu$imputed <- "N"
+
+missing_ibu <- bmerged_final_ds %>% filter(is.na(IBU))
+missing_ibu$imputed <- "Y"
+
+model_ibu <- non_missing_ibu %>% lm(formula=log(IBU)~log(ABV))
+plot(model_ibu)
+
+summary(model_ibu)
+
+missing_ibu$IBU <- round(exp(predict(model_ibu,missing_ibu)),0)
+
+imputed_df <- rbind(non_missing_ibu,missing_ibu)
+imputed_df$imputed <- as.factor(imputed_df$imputed)
+
+imputed_df %>% ggplot(aes(x=ABV,y=IBU,color=imputed))+
+               geom_point()+ggtitle("ABV Vs IBU") + 
+               theme_wsj()+
+               theme(axis.text.x = element_text(angle=65, vjust=0.3))+  
+               theme(plot.title    = element_text(size = rel(0.5)),
+               plot.subtitle = element_text(size = rel(0.5)),
+               axis.text.x   = element_text(vjust=0.6,size=8),
+               axis.text.y   = element_text(vjust=0.2,size=6),
+               axis.title    = element_text(size = rel(0.5)),
+               legend.position  = "right",
+               legend.direction ="vertical",
+               legend.title = element_text(size = rel(0.5)))
+
+
+```
+
+### Median Alcohol content and Bitternes Vs state
+* State Vs Median Alcohol content
+
+```{r}
+
+abv_by_states <- imputed_df %>% select(State,ABV) %>% group_by(State) %>%  summarise(Median=as.numeric(median(ABV))) %>% arrange(desc(Median))
+
+abv_by_states$State <- factor(abv_by_states$State, levels = abv_by_states$State) 
+
+ggplot(abv_by_states, aes(x=State, y=Median)) + 
+  geom_bar(stat="identity", width=.8, fill="tomato3") + 
+  labs(title="Ordered Bar Chart", 
+       subtitle="Median ABV Vs State", 
+       caption="Beer Analysis") + 
+  xlab("State")+
+  ylab("Alcohol content")+
+  theme_wsj()+
+  theme(axis.text.x = element_text(angle=65, vjust=0.6))+  
+  theme(plot.title    = element_text(size = rel(0.5)),
+  plot.subtitle = element_text(size = rel(0.5)),
+  axis.text.x   = element_text(vjust=0.6,size=7),
+  axis.title    = element_text(size = rel(0.5)),
+  legend.position  = "right",
+  legend.direction ="vertical",
+  legend.title = element_text(size = rel(0.2)))
+
+
+```
+
+* State Vs Median Bitterness
+
+
+```{r}
+
+ibu_by_states <- imputed_df %>% select(State,IBU) %>% group_by(State) %>%  summarise(Median=as.numeric(median(IBU))) %>% arrange(desc(Median))
+
+ibu_by_states$State <- factor(ibu_by_states$State, levels = ibu_by_states$State) 
+
+ggplot(ibu_by_states, aes(x=State, y=Median)) + 
+  geom_bar(stat="identity", width=.8, fill="tomato3") + 
+  labs(title="Ordered Bar Chart", 
+       subtitle="Median IBU Vs State", 
+       caption="Beer Analysis") + 
+  xlab("State")+
+  ylab("Alcohol content")+
+  theme_wsj()+
+  theme(axis.text.x = element_text(angle=65, vjust=0.6))+  
+  theme(plot.title    = element_text(size = rel(0.5)),
+  plot.subtitle = element_text(size = rel(0.5)),
+  axis.text.x   = element_text(vjust=0.6,size=7),
+  axis.title    = element_text(size = rel(0.5)),
+  legend.position  = "right",
+  legend.direction ="vertical",
+  legend.title = element_text(size = rel(0.2)))
+
+
 ```
 
 
+### Distribution of ABV
+* boxplot
+```{r}
+imputed_df %>% ggplot(aes(y=ABV,x=State)) +
+               geom_boxplot(aes(fill=State), alpha=0.8,show.legend = FALSE) + 
+               labs(title="Alcohol Content", 
+               caption="Beer Analysis") + 
+               xlab("State")+
+               ylab("Alcohol content")+
+               theme_wsj()+
+               theme(axis.text.x = element_text(angle=65, vjust=0.6))+  
+               theme(plot.title    = element_text(size = rel(0.5)),
+               plot.subtitle = element_text(size = rel(0.5)),
+               axis.text.x   = element_text(vjust=0.6,size=7),
+               axis.title    = element_text(size = rel(0.5)),
+               legend.position  = "right",
+               legend.direction ="vertical",
+               legend.title = element_text(size = rel(0.2)))
+
+
+
+```
+
+* density plot
+
+```{r}
+
+imputed_df %>% ggplot(aes(x=ABV)) +
+               geom_density(aes(fill=State), alpha=0.8) + 
+               labs(title="Density Plot", 
+               caption="Beer Analysis") + 
+               xlab("State")+
+               ylab("Alcohol content")+
+               theme_wsj()+
+               theme(axis.text.x = element_text(angle=65, vjust=0.6))+  
+               theme(plot.title    = element_text(size = rel(0.5)),
+               plot.subtitle = element_text(size = rel(0.5)),
+               axis.text.x   = element_text(vjust=0.6,size=7),
+               axis.title    = element_text(size = rel(0.5)),
+               legend.position  = "right",
+               legend.direction ="vertical",
+               legend.title = element_text(size = rel(0.2)))
+
+
+```
