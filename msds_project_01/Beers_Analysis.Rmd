@@ -320,7 +320,7 @@ ggplot(ibu_by_states, aes(x=State, y=Median)) +
 
 
 ### Distribution of ABV
-* boxplot
+* boxplot Max ABV
 ```{r}
 
 ibu_by_states <- imputed_df %>% select(State,ABV) %>% group_by(State) %>%  arrange(desc(ABV))
@@ -348,6 +348,39 @@ ibu_by_states %>% ggplot(aes(y=ABV,x=State)) +
 
 
 ```
+
+### Distribution of IBU
+* boxplot Max IBU
+```{r}
+
+ibu_by_states <- imputed_df %>% select(State,IBU) %>% group_by(State) %>%  arrange(desc(IBU))
+
+ibu_by_states$State <- factor(ibu_by_states$State, levels = unique(ibu_by_states$State)) 
+
+str(ibu_by_states)
+
+imputed_df %>% arrange(desc(IBU))
+
+ibu_by_states %>% ggplot(aes(y=IBU,x=State)) +
+                  geom_boxplot(aes(fill=State), alpha=0.8,show.legend = FALSE) + 
+                  labs(title="IBU", 
+                  caption="Beer Analysis") + 
+                  xlab("State")+
+                  ylab("IBU")+
+                  theme_wsj()+
+                  theme(axis.text.x = element_text(angle=65, vjust=0.6))+  
+                  theme(plot.title    = element_text(size = rel(0.5)),
+                  plot.subtitle = element_text(size = rel(0.5)),
+                  axis.text.x   = element_text(vjust=0.6,size=7),
+                  axis.title    = element_text(size = rel(0.5)),
+                  legend.position  = "right",
+                  legend.direction ="vertical",
+                  legend.title = element_text(size = rel(0.2)))
+
+
+
+```
+
 
 * density plot
 
