@@ -220,7 +220,7 @@ missing_ibu <- bmerged_final_ds %>% filter(is.na(IBU))
 missing_ibu$imputed <- "Y"
 
 model_ibu <- non_missing_ibu %>% lm(formula=log(IBU)~log(ABV))
-plot(model_ibu)
+
 
 summary(model_ibu)
 
@@ -241,6 +241,21 @@ imputed_df %>% ggplot(aes(x=ABV,y=IBU,color=imputed))+
                legend.position  = "right",
                legend.direction ="vertical",
                legend.title = element_text(size = rel(0.5)))
+
+
+bmerged_ds %>% ggplot(aes(x=ABV,y=IBU))+
+               geom_point()+
+               theme_wsj()+geom_smooth(method="lm")+
+               theme(axis.text.x = element_text(angle=65, vjust=0.3))+  
+               theme(plot.title    = element_text(size = rel(0.5)),
+               plot.subtitle = element_text(size = rel(0.5)),
+               axis.text.x   = element_text(vjust=0.6,size=8),
+               axis.text.y   = element_text(vjust=0.2,size=6),
+               axis.title    = element_text(size = rel(0.5)),
+               legend.position  = "right",
+               legend.direction ="vertical",
+               legend.title = element_text(size = rel(0.5)))
+
 
 
 ```
@@ -307,11 +322,41 @@ ggplot(ibu_by_states, aes(x=State, y=Median)) +
 ### Distribution of ABV
 * boxplot
 ```{r}
-imputed_df %>% ggplot(aes(y=ABV,x=State)) +
-               geom_boxplot(aes(fill=State), alpha=0.8,show.legend = FALSE) + 
-               labs(title="Alcohol Content", 
-               caption="Beer Analysis") + 
-               xlab("State")+
+
+ibu_by_states <- imputed_df %>% select(State,ABV) %>% group_by(State) %>%  arrange(desc(ABV))
+
+ibu_by_states$State <- factor(ibu_by_states$State, levels = unique(ibu_by_states$State)) 
+
+str(ibu_by_states)
+
+ibu_by_states %>% ggplot(aes(y=ABV,x=State)) +
+                  geom_boxplot(aes(fill=State), alpha=0.8,show.legend = FALSE) + 
+                  labs(title="Alcohol Content", 
+                  caption="Beer Analysis") + 
+                  xlab("State")+
+                  ylab("Alcohol content")+
+                  theme_wsj()+
+                  theme(axis.text.x = element_text(angle=65, vjust=0.6))+  
+                  theme(plot.title    = element_text(size = rel(0.5)),
+                  plot.subtitle = element_text(size = rel(0.5)),
+                  axis.text.x   = element_text(vjust=0.6,size=7),
+                  axis.title    = element_text(size = rel(0.5)),
+                  legend.position  = "right",
+                  legend.direction ="vertical",
+                  legend.title = element_text(size = rel(0.2)))
+
+
+
+```
+
+* density plot
+
+```{r}
+
+imputed_df %>% ggplot(aes(x=ABV,fill=State)) +
+               geom_histogram(bins=30) + 
+               labs(title="ABV Distribution", 
+               caption="Beer Asnalysis") + 
                ylab("Alcohol content")+
                theme_wsj()+
                theme(axis.text.x = element_text(angle=65, vjust=0.6))+  
@@ -323,13 +368,7 @@ imputed_df %>% ggplot(aes(y=ABV,x=State)) +
                legend.direction ="vertical",
                legend.title = element_text(size = rel(0.2)))
 
-
-
-```
-
-* density plot
-
-```{r}
+summary(imputed_df$ABV)
 
 imputed_df %>% ggplot(aes(x=ABV)) +
                geom_density(aes(fill=State), alpha=0.8) + 
