@@ -27,7 +27,9 @@ The datasets descriptions are as follows.
 |City           | City where the brewery is located.       |
 |State          |  U.S. State where the brewery is located.|
 
+
 Analyze both datasets to answer following questions
+
 
 1.  How many breweries are present in each state?
 2.  Plot a bar chart with median alcohol content and international bitterness unit for each state. 
