@@ -1,5 +1,9 @@
 ## MSDS6301 Case Study 1 - Beer Analysis
 
+### Purpose
+
+To explore a dataset of breweries and beers, attempting to find something interesting in the data. The guiding questions and analysis process is shown in the analysis file. The presentations of this analysis are also provided.
+
 ### Description
 
 The Beers dataset contains a list of 2410 US craft beers and Breweries dataset contains 558 US breweries.<br>
