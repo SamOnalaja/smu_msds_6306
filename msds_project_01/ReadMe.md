@@ -3,7 +3,7 @@
 ## Group members
 
 Sachin Chavan<br>
-Salsman Jordan
+<a href="https://github.com/Jsalsman7/SMU_MSDS"> Salsman Jordan</a>
 
 ## Purpose
 
