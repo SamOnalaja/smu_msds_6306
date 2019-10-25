@@ -1,6 +1,6 @@
 ## MSDS6301 Case Study 1 - Beer Analysis
 
-## Group member
+## Group members
 
 Sachin Chavan<br>
 Salsman Jordan
