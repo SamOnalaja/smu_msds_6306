@@ -39,7 +39,7 @@ The datasets descriptions are as follows.
 
 ### Analysis Document
 
-* R Markdown Source
+* <a href="https://github.com/sachinac/smu_msds_6306/blob/master/msds_project_01/Beers_Analysis.Rmd"> R Markdown Source</a>
 * <a href="https://github.com/sachinac/smu_msds_6306/blob/master/msds_project_01/Beers_Analysis.html" target="_blank"> R Markdown html output </a>
 * R Markdown pdf output
 
