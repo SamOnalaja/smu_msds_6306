@@ -52,3 +52,10 @@ Codebook Provides additional details about code and data.
 |Name           | Name of the brewery.                     |
 |City           | City where the brewery is located.       |
 |State          |  U.S. State where the brewery is located.|
+
+**Libraries:**
+* ggplot2
+* ggthemes
+* tidyverse
+* naniar
+* visdat
