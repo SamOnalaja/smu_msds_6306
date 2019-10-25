@@ -1,5 +1,10 @@
 ## MSDS6301 Case Study 1 - Beer Analysis
 
+## Group member
+
+Sachin Chavan
+Salsman Jordan
+
 ## Purpose
 
 To explore a dataset of breweries and beers, attempting to find something interesting in the data. The guiding questions and analysis process is shown in the analysis file. The presentations of this analysis are also provided.
