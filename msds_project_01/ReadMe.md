@@ -9,20 +9,7 @@ To explore a dataset of breweries and beers, attempting to find something intere
 The Beers dataset contains a list of 2410 US craft beers and Breweries dataset contains 558 US breweries.<br>
 The datasets descriptions are as follows.
 
-## Analysis
-
-### Presentation
-
-* Powerpoint
-* Youtube Video
-
-### Analysis Document
-
-* R Markdown Source
-* R Markdown html output
-* R Markdown pdf output
-
-### Questions 
+## Questions 
 
 1.   How many breweries are present in each state?
 
@@ -41,6 +28,20 @@ The datasets descriptions are as follows.
 8.  Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually.In addition, while you have decided to use KNN to investigate this relationship (KNN is required) you may also feel free to supplement your response to this question with any other methods or techniques you have learned.  Creativity and alternative solutions are always encouraged.  
 
 9. Knock their socks off!  Find one other useful inference from the data that you feel Budweiser may be able to find value in.  You must convince them why it is important and back up your conviction with appropriate statistical evidence. 
+
+
+## Analysis
+
+### Presentation
+
+* Powerpoint
+* Youtube Video
+
+### Analysis Document
+
+* R Markdown Source
+* R Markdown html output
+* R Markdown pdf output
 
 
 ### Data
