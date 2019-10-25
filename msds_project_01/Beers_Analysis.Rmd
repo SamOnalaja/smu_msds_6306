@@ -1,16 +1,30 @@
-title: "Beers_Analysis"
+--- 
+title: "Beer_Analysis"
 author: "Sachin Chavan"
 date: "10/13/2019"
-output: html_document
----
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    df_print: paged
+    html_theme: rticles
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: no
+--- 
 
-### Load follwing libraries
+## Introduction
+This is an analysis of a dataset containing beer and brewery data. The dataset contains 2410 beers from 558 breweries in 50 states of the United States and <br>
+the District of Columbia. The goal was to explore the data set and look for interesting features of the data. Once the data was explored, the analysis focused <br> 
+on how international bitterness unit (IBU) and alcohol by volume (ABV) of beer are distributed over states and the relationship between IBU and ABV. The analysis <br>
+also includes a discussion of the missing data and how the missing data impacts making insights from the dataset.
+
+#### Load follwing libraries
 
 *  ggplot2 - visualizations
 *  tidyverse
 *  naniar and visdat - visualizations for missing data
-*  mice - Imputation
-
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -19,12 +33,6 @@ library(ggthemes)
 library(tidyverse)
 library(naniar)
 library(visdat)
-library(GGally)
-library(mice)  
-library(VIM)
-library(lattice)
-library(ggmap)
-library(treemapify)
 ```
 
 ### Load data into memory from csv 
@@ -44,8 +52,8 @@ names(bmerged_ds)[5] <- "BeerName"
 
 ### Structures of the datasets
 * breweries_ds - Breweries in USA
-* beers_ds    - Different beer styles with ABV and IBU
-* bmerged_ds  - Merged dataset
+* beers_ds     - Different beer styles with ABV and IBU
+* bmerged_ds   - Merged dataset
 
 ```{r}
 str(breweries_ds)
@@ -58,7 +66,6 @@ str(bmerged_ds)
 ```{r}
 head(bmerged_ds)
 tail(bmerged_ds)
-
 ```
 
 ### Summary Statistics of both datasets
@@ -66,12 +73,18 @@ tail(bmerged_ds)
 * beers_ds    - Different beer styles with ABV and IBU
 * bmerged_ds  - Merged dataset
 
-```{r}
-summary(breweries_ds)
-summary(beers_ds)
-summary(bmerged_ds)
+As we can see from Summary, IBU and ABV have some missing values.
+We can either remove or impute these missing values with various techniques.
 
+Please refer <a href="https://www.theanalysisfactor.com/seven-ways-to-make-up-data-common-methods-to-imputing-missing-data/"> Imputation techniques </a>
+Hereafter we will use merged data
+
+```{r}
+summary(bmerged_ds)
 ```
+
+### Missing values
+
 
 ### Visual Summary
 #### Total Breweries per state
