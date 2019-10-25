@@ -44,7 +44,7 @@ The datasets descriptions are as follows.
 * Knit pdf output
 
 
-### Data
+### Input Data
 * <a href="https://github.com/sachinac/smu_msds_6306/blob/master/msds_project_01/data/Beers.csv"> Beers.csv </a>
 * <a href="https://github.com/sachinac/smu_msds_6306/blob/master/msds_project_01/data/Breweries.csv"> Breweries.csv </a> 
 
