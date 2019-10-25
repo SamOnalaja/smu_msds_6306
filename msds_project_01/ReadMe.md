@@ -1,8 +1,8 @@
 ## MSDS6301 Case Study-01 - Beer Analysis
 
 ## Group members
-
-Sachin Chavan<br>
+<a href="https://github.com/sachinac/smu_msds_6306/tree/master/msds_project_01"> 
+Sachin Chavan </a><br>
 <a href="https://github.com/Jsalsman7/SMU_MSDS"> Salsman Jordan</a>
 
 ## Purpose
