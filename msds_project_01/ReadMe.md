@@ -46,7 +46,7 @@ The datasets descriptions are as follows.
 
 ### Data
 * Beers.csv
-* <href="https://github.com/sachinac/smu_msds_6306/blob/master/msds_project_01/data/Breweries.csv"> Breweries.csv
+* <a href="https://github.com/sachinac/smu_msds_6306/blob/master/msds_project_01/data/Breweries.csv"> Breweries.csv </a>
 
 
 ### Codebook
