@@ -34,7 +34,7 @@ The datasets descriptions are as follows.
 
 ### Presentation
 
-* Powerpoint
+* <a href="https://github.com/sachinac/smu_msds_6306/blob/master/msds_project_01/Sachin_Chavan_DDS_Project01.pptx"> Powerpoint </a>
 * Youtube Video
 
 ### Analysis Document
