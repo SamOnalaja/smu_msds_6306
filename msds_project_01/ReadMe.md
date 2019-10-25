@@ -1,4 +1,4 @@
-## MSDS6301 Case Study 1 - Beer Analysis
+## MSDS6301 Case Study-01 - Beer Analysis
 
 ## Group members
 
