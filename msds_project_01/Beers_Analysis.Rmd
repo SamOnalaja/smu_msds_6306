@@ -3,8 +3,6 @@ title: "Beer_Analysis"
 author: "Sachin Chavan"
 date: "10/13/2019"
 output:
-  word_document:
-    toc: yes
   html_document:
     df_print: paged
     html_theme: hpstr
@@ -12,6 +10,8 @@ output:
     toc_float:
       collapsed: no
       smooth_scroll: no
+  word_document:
+    toc: yes
   pdf_document:
     toc: yes
 --- 
