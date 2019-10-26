@@ -55,7 +55,7 @@ The datasets descriptions are as follows.
 ### Datasets
 * <a href="https://github.com/sachinac/smu_msds_6306/blob/master/msds_project_01/data/Beers.csv"> Beers.csv </a>
 * <a href="https://github.com/sachinac/smu_msds_6306/blob/master/msds_project_01/data/Breweries.csv"> Breweries.csv </a> 
-
+* <a href="https://github.com/sachinac/smu_msds_6306/blob/master/msds_project_01/data/state_abbreviations.csv"> state_abbreviations.csv </a>
 
 ## Codebook
 
