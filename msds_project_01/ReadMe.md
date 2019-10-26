@@ -95,5 +95,5 @@ Codebook Provides additional details about code and data.
 | visdat        | Missing data Visualizations   |  
 | mice          | Imputations                   |  
 | VIM           | Missing data patterns         |  
-* stringr
-* Hmisc
+| stringr       | Strings processing            |           
+| Hmisc         | for Capitalize function       |
