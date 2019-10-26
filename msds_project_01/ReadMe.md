@@ -85,7 +85,7 @@ Codebook Provides additional details about code and data.
 
 **Libraries:**
 
-|**Library** | **Use of library**               |
+|**Library**    | **Purpose**                   |
 |---------------|:------------------------------|
 | ggplot2       | Visualizations                |  
 | ggthemes      | Themes for ggplots            |  
@@ -97,3 +97,21 @@ Codebook Provides additional details about code and data.
 | VIM           | Missing data patterns         |  
 | stringr       | Strings processing            |           
 | Hmisc         | for Capitalize function       |
+
+**Variables in the Program:**
+
+|**Variable Name** | **Purpose**                   |
+|---------------|:---------------------------------|
+| beers_ds      | Beers.csv                        |  
+| breweries_ds  | Breweries.csv                    |  
+| states_ds     | state_abbreviations.csv          |  
+| bmerged_ds    | beers_ds+breweries_ds+states_ds  |  
+| bmerged_ds    | beers_ds+breweries_ds+states_ds  |  
+| bmerged_final_ds | After deleting missing data  |  
+| model_ibu | regression model without transformation  |  
+| model_log_ibu | regression model with transformation  |  
+| imputed_df | final imputed dataframe derived from bmerged_final_ds  |  
+
+
+
+
