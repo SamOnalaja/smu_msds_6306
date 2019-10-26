@@ -10,10 +10,6 @@ output:
     toc_float:
       collapsed: no
       smooth_scroll: no
-  word_document:
-    toc: yes
-  pdf_document:
-    toc: yes
 --- 
 
 # Introduction
