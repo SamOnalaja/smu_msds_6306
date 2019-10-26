@@ -3,36 +3,41 @@ title: "Beer_Analysis"
 author: "Sachin Chavan"
 date: "10/13/2019"
 output:
-  pdf_document:
+  word_document:
     toc: yes
   html_document:
     df_print: paged
-    html_theme: rticles
+    html_theme: hpstr
     toc: yes
     toc_float:
       collapsed: no
       smooth_scroll: no
+  pdf_document:
+    toc: yes
 --- 
 
-## Introduction
-This is an analysis of a dataset containing beer and brewery data. The dataset contains 2410 beers from 558 breweries in 50 states of the United States and <br>
-the District of Columbia. The goal was to explore the data set and look for interesting features of the data. Once the data was explored, the analysis focused <br> 
-on how international bitterness unit (IBU) and alcohol by volume (ABV) of beer are distributed over states and the relationship between IBU and ABV. The analysis <br>
-also includes a discussion of the missing data and how the missing data impacts making insights from the dataset.
+# Introduction
+This is an analysis of a dataset containing beer and brewery data. The dataset contains 2410 beers from 558 breweries in 50 states of the United States and the District of Columbia. The goal was to explore the data set and look for interesting features of the data. Once the data was explored, the analysis focused on how international bitterness unit (IBU) and alcohol by volume (ABV) of beer are distributed over states and the relationship between IBU and ABV. The analysis also includes a discussion of the missing data and how the missing data impacts making insights from the dataset.
 
-#### Load follwing libraries
+### Load following libraries
 
-*  ggplot2 - visualizations
+*  ggplot2  - visualizations
+*  ggthemes - Themes
 *  tidyverse
 *  naniar and visdat - visualizations for missing data
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,collapse = TRUE)
 library(ggplot2)
 library(ggthemes)
+library(prettydoc)
 library(tidyverse)
 library(naniar)
 library(visdat)
+library(mice)
+library(VIM)
+library(stringr)
+library(Hmisc)
 ```
 
 ### Load data into memory from csv 
@@ -42,12 +47,25 @@ library(visdat)
 *  Merge Breweries and Beers
 *  Rename Names column after merging two datasets
 
-```{r dpi=100}
+```{r dpi=800}
+
 breweries_ds <- read.csv('data/Breweries.csv',header = TRUE)
+states_ds    <- read.csv('data/state_abbreviations.csv',header = TRUE)
+#Trim leading and trailing spaces
+breweries_ds$State       <- as.factor(str_trim(breweries_ds$State,side="both"))
+states_ds$State          <- as.factor(str_trim(states_ds$State,side="both"))
+states_ds$Unabbreviated  <- as.factor(capitalize(str_trim(states_ds$Unabbreviated,side="both")))
+states_ds$CensusDivision <- as.factor(capitalize(str_trim(states_ds$CensusDivision,side="both"))) 
+#Merge with states_ds for state names
+breweries_ds <- merge(breweries_ds,states_ds,by.x="State",by.y="State")
+
 beers_ds     <- read.csv('data/Beers.csv'    ,header = TRUE)
 bmerged_ds   <- merge(breweries_ds,beers_ds,by.x="Brew_ID",by.y="Brewery_id")
-names(bmerged_ds)[2] <- "BreweryName"
-names(bmerged_ds)[5] <- "BeerName"
+
+names(bmerged_ds)[3] <- "BreweryName"
+names(bmerged_ds)[7] <- "BeerName"
+
+attach(bmerged_ds)
 ```
 
 ### Structures of the datasets
@@ -63,183 +81,238 @@ str(bmerged_ds)
 
 ### Merged dataset
 * First and last 10 records from merged set
-```{r}
+```{r tidy}
 head(bmerged_ds)
 tail(bmerged_ds)
 ```
 
-### Summary Statistics of both datasets
+### Summary Statistics
 * breweris_ds - Breweries in USA
 * beers_ds    - Different beer styles with ABV and IBU
 * bmerged_ds  - Merged dataset
 
-As we can see from Summary, IBU and ABV have some missing values.
-We can either remove or impute these missing values with various techniques.
+As we can see from Summary, IBU and ABV have some missing values.We can either remove or impute these missing values with various techniques.<br>
 
-Please refer <a href="https://www.theanalysisfactor.com/seven-ways-to-make-up-data-common-methods-to-imputing-missing-data/"> Imputation techniques </a>
-Hereafter we will use merged data
+Let's first find out pattern of missing data.
+
+Please refer <a href="https://www.theanalysisfactor.com/seven-ways-to-make-up-data-common-methods-to-imputing-missing-data/"> Imputation techniques </a> for more details <br>
+
+Summary of merged dataset
 
 ```{r}
 summary(bmerged_ds)
 ```
 
-### Missing values
+# Missing values and Imputations
+
+package naniar and visat package provides visualizations of missing data.
+
+### Fields with missing values
+
+```{r fig.width=10}
+vis_miss(bmerged_ds)
+```
+
+**Missing percentage**:
+
+|**Field Name** |**Pecentage(%)**|
+----------------|----------------|
+| ABV           |   2.57         |
+| IBU           |   41.7         |
+|               |                |
+
+**Total Missing - 3.7%** <br>
 
 
-### Visual Summary
-#### Total Breweries per state
+<br><br>
+Here is another color coded view of missing data with datatypes<br>
 
-```{r}
+```{r fig.width=10}
+vis_guess(bmerged_ds)
+```
 
-b_states <- breweries_ds %>% group_by(State) %>% count() %>% arrange(desc(n))
-b_states$State <- factor(b_states$State, levels = b_states$State) 
+### mice::md.pattern()
 
-ggplot(b_states, aes(x=State, y=n)) + 
-  geom_bar(stat="identity", width=.8, fill="tomato3") + 
-  labs(title="Ordered Bar Chart", 
-       subtitle="State Vs Number of Breweries", 
-       caption="Beer Analysis") + 
-  xlab("State")+
-  ylab("Total Breweries")+
-  theme_wsj()+
-  theme(axis.text.x = element_text(angle=65, vjust=0.6))+  
-  theme(plot.title    = element_text(size = rel(0.5)),
-  plot.subtitle = element_text(size = rel(0.5)),
-  axis.text.x   = element_text(vjust=0.6,size=10),
-  axis.title    = element_text(size = rel(0.5)),
-  legend.position  = "right",
-  legend.direction ="vertical",
-  legend.title = element_text(size = rel(0.2)))
-  
+The MICE package (stands for Multiple Imputation by Chained Equations) can help in several ways - here, we’ll use it for finding the NA-patterns:
+
+
+```{r fig.width=10}
+md.pattern(bmerged_ds)
+```
+
+
+#### We see that there are 3 patterns: 
+ *  1405  observations with complete information 
+ *   943  observations have a NA in IBU
+ *    62  observations have a NA in ABV
+
+ 
+### VIM::aggr()
+
+The function aggr() is an additional tool to visualize the missing values. 
+
+```{r fig.width=10}
+aggr_plot <- aggr(bmerged_ds, col=c('#41A9EC','red'), numbers=TRUE, sortVars=TRUE, 
+                  labels=names(data), cex.axis=.7, gap=3, 
+                  ylab=c("Histogram of missing data","Pattern"))
+```
+
+#### Missing Pattern Interpretation
+ * Left plot shows fields with missing values
+ * Right plot shows missing pattern 
+ * 58.3%  observations with complete information 
+ * 2.6%   observations have a NA in both ABV and IBU
+ * 3.91%  observations have a NA in both  IBU
+
+### VIM::marginplot()<br>
+
+```{r fig.width=10}
+marginplot(bmerged_ds[c(9,10)])
+```
+
+#### Marginplot Interpretation
+For the plot, we only specifed to take ABV and IBU. Therefore, we can see here the pattern for these two columns as follows:
+
+ * The blue dots represent Beers that have observed values in both ABV and IBU.
+ * The blue boxes are their box plots.
+ * The red dots represent missing values for either ABV but observed for IBU (left vertical margin) or vice versa: missing values for IBU but observed for ABV (bottom horizontal margin).
+ * and their box plots.
+
+<br>Under the MCAR (Missing Completely at Random) assumption, the red and the blue box should be identical. <br><font color="red">In our case it is not and 62 values are missing in both IBU and ABV.
+There is no way we can relate this missing information with any other fields. So we can delete these 62 observations. </font>
+
+#### Below is the table after deleting 62 observations
+* Now final dataset that we are using for analysis contains 2348 records.
+* This dataset contains missing NAs only in IBU
+* We will check again missingness and then apply imputations to populate missing data by using regression.
+
+```{r fig.width=10}
+bmerged_final_ds <- bmerged_ds %>% filter(!is.na(ABV) | !is.na(IBU))
+bmerged_final_ds
+
+
 
 ```
 
-### Missing Values
-* breweris_ds - Breweries in USA
-* beers_ds    - Different beer styles with ABV and IBU
 
-```{r}
-vis_dat(bmerged_ds,palette = "qual")
-beer_ounces <- beers_ds
-beer_ounces$Ounces <- as.factor(beer_ounces$Ounces)
+### VIM::marginplot() - trimmed<br>
 
-gg_miss_var(bmerged_ds,facet=State)+
-  theme_wsj()+
-  theme(axis.text.x = element_text(angle=65, vjust=0.3))+  
-  theme(plot.title    = element_text(size = rel(0.5)),
-  plot.subtitle = element_text(size = rel(0.5)),
-  axis.text.x   = element_text(vjust=0.6,size=8),
-  axis.text.y   = element_text(vjust=0.2,size=4),
-  axis.title    = element_text(size = rel(0.5)),
-  legend.position  = "right",
-  legend.direction ="vertical",
-  legend.title = element_text(size = rel(0.2)))
+This is marginplot after deleting 62 observations.
 
-gg_miss_var(bmerged_ds,facet=Style)+
-  theme_wsj()+
-  theme(axis.text.x = element_text(angle=65, vjust=0.3))+  
-  theme(plot.title    = element_text(size = rel(0.5)),
-  plot.subtitle = element_text(size = rel(0.3)),
-  axis.text.x   = element_text(vjust=0.6,size=8),
-  axis.text.y   = element_text(vjust=0.2,size=4),
-  axis.title    = element_text(size = rel(0.5)),
-  legend.position  = "right",
-  legend.direction ="vertical",
-  legend.title = element_text(size = rel(0.2)))
-
-gg_miss_var(beer_ounces,facet=Ounces)+
-  theme_wsj()+
-  theme(axis.text.x = element_text(angle=65, vjust=0.3))+  
-  theme(plot.title    = element_text(size = rel(0.5)),
-  plot.subtitle = element_text(size = rel(0.5)),
-  axis.text.x   = element_text(vjust=0.6,size=10),
-  axis.text.y   = element_text(vjust=0.2,size=7),
-  axis.title    = element_text(size = rel(0.5)),
-  legend.position  = "right",
-  legend.direction ="vertical",
-  legend.title = element_text(size = rel(0.2)))
-
-```
-### Missing Values continued
-* Missing values by state
-* Missing values by Style
-
-```{r}
-aq_shadow <- bind_shadow(bmerged_ds)
-glimpse(aq_shadow)
-
-bmerged_ds %>%
-  bind_shadow() %>%
-  group_by(IBU_NA) %>%
-  summarise_at(.vars = "ABV",
-               .funs = c("mean", "sd", "var", "min", "max"),
-               na.rm = TRUE)
-
-ggplot(aq_shadow,
-       aes(x = ABV,
-           colour = IBU_NA)) + 
-  geom_density()
-
-ggplot(bmerged_ds, 
-       aes(x = ABV, 
-           y = IBU)) + 
-  geom_miss_point() + 
-  theme_wsj()+
-  theme(axis.text.x = element_text(angle=65, vjust=0.3))+  
-  theme(plot.title    = element_text(size = rel(0.5)),
-  plot.subtitle = element_text(size = rel(0.5)),
-  axis.text.x   = element_text(vjust=0.6,size=8),
-  axis.text.y   = element_text(vjust=0.2,size=8),
-  axis.title    = element_text(size = rel(0.5)),
-  legend.position  = "right",
-  legend.direction ="vertical",
-  legend.title = element_text(size = rel(0.5)))+
-  facet_wrap(~State)
-
-
-
-ggplot(bmerged_ds, 
-       aes(x = ABV, 
-           y = IBU)) + 
-  geom_miss_point() + 
-  theme_wsj()+
-  theme(axis.text.x = element_text(angle=65, vjust=0.3))+  
-  theme(plot.title    = element_text(size = rel(0.3)),
-  plot.subtitle = element_text(size = rel(0.5)),
-  axis.text.x   = element_text(vjust=0.6,size=8),
-  axis.text.y   = element_text(vjust=0.2,size=6),
-  axis.title    = element_text(size = rel(0.5)),
-  legend.position  = "right",
-  legend.direction ="vertical",
-  legend.title = element_text(size = rel(0.5)))+
-  facet_wrap(~Style)
-
+```{r fig.width=10}
+marginplot(bmerged_final_ds[c(9,10)])
 ```
 
-### Imputations
+#### Interpretations
+* Now data contains NAs only in IBU
+* Total 943 obserbvations have NAs
+* boxplots are nearly identical. MCAR assumption is met to impute data.
+* regression methodoloy will be employed to get values in missing column.
+
+### VIM::pbox()<br>
+```{r fig.width=10}
+pbox(bmerged_final_ds,pos=5)
+```
+
+#### pbox Interpretation
+The MAR assumption states that missingness is based on the other observed vairable(s) but not of the missing variable(s) itself. 
+
+ * In the above plot, we are looking at the missing values and how they are distributed w.r.t. to BeerName (position 2 in our case).
+ * Evidence for MAR would be if the missing-value distributions were much higher or much lower than those of the non-missing-values. 
+ * But because in our example, the boxplots seem to be overlapping, hence, the missing values in IBU and ABV seem to be randomly distributed w.r.t. to BeerName, 
+   hence, providing support for the MCAR assumption, and not the MAR assumption.
+ * We will proceed with Imputation to populate IBU using regression    
+
+
+### Imputations<br>
 * 62 records doens't have IBU and SBV both - these are deleted
 * Total records to process 2410-62 =  2348
 * Prediction is required on 943 missing IBU
 * Total records with IBU is 1405
 
 ```{r}
-
-bmerged_final_ds <- bmerged_ds %>% filter(!is.na(ABV) | !is.na(IBU))
-
+# Fetch records with non-missing IBU
+# set indicator imputed to "N" to indicate these are original values.
 non_missing_ibu <- bmerged_final_ds %>% filter(!is.na(IBU))
 non_missing_ibu$imputed <- "N"
 
+# Fetch records with missing IBU
+# set indicator imputed to "Y" to indicate these are missing and will be imputed
 missing_ibu <- bmerged_final_ds %>% filter(is.na(IBU))
 missing_ibu$imputed <- "Y"
 
-model_ibu <- non_missing_ibu %>% lm(formula=log(IBU)~log(ABV))
+# Run regression model without log transform
+model_ibu <- non_missing_ibu %>% lm(formula=IBU~ABV)
 
-
+# Model Summary
 summary(model_ibu)
 
-missing_ibu$IBU <- round(exp(predict(model_ibu,missing_ibu)),0)
+# Run regression model
+model_log_ibu <- non_missing_ibu %>% lm(formula=log(IBU)~log(ABV))
 
+# log transformed Model Summary
+summary(model_log_ibu)
+
+```
+
+#### Checking on assumptions
+* Residual plots before log transformation
+```{r}
+par(mfrow=c(1,2))
+plot(model_ibu)
+```
+
+#### Interpretations
+ * Residual plots shows departure from constant variation assumption
+ * QQplot shows normality
+ * But since constant variation assumption is violated, We will have to try log transforamtion
+
+
+####  Residual plots after log transformation
+```{r}
+par(mfrow=c(1,2))
+plot(model_log_ibu)
+```
+
+#### Interpretations
+ * Tried log on response (not shown here) and log on predictor model constant variation assumption was still no met.
+ * Residual plot vs fitted plot after log-log looks much better. No serious voilation of constant variance assumption
+ * QQplot shows no departure from normality
+ * log log model is selected for imputation.
+ * **Adjusted R-squared - 39.27%**
+ * Model is statistically significant p-value < 0.05
+ * **degrees of freedom - 1403**
+
+#### Orignal Scatterplot 
+
+```{r}
+
+bmerged_ds %>% filter(!is.na(IBU)) %>%
+               ggplot(aes(x=ABV,y=IBU))+
+               geom_point()+
+               theme_wsj()+geom_smooth(method="lm")+
+               theme(axis.text.x = element_text(angle=65, vjust=0.3))+  
+               theme(plot.title    = element_text(size = rel(0.5)),
+               plot.subtitle = element_text(size = rel(0.5)),
+               axis.text.x   = element_text(vjust=0.6,size=8),
+               axis.text.y   = element_text(vjust=0.2,size=6),
+               axis.title    = element_text(size = rel(0.5)),
+               legend.position  = "right",
+               legend.direction ="vertical",
+               legend.title = element_text(size = rel(0.5)))
+
+
+```
+ 
+#### Scatterplot after Imputation.
+ 
+```{r}
+# Since IBU was log transformed. Below code transforms it back original scale
+missing_ibu$IBU <- exp(predict(model_log_ibu,missing_ibu))
+
+# Combine missing and non-missing datasets
 imputed_df <- rbind(non_missing_ibu,missing_ibu)
+
 imputed_df$imputed <- as.factor(imputed_df$imputed)
 
 imputed_df %>% ggplot(aes(x=ABV,y=IBU,color=imputed))+
@@ -256,33 +329,52 @@ imputed_df %>% ggplot(aes(x=ABV,y=IBU,color=imputed))+
                legend.title = element_text(size = rel(0.5)))
 
 
-bmerged_ds %>% ggplot(aes(x=ABV,y=IBU))+
-               geom_point()+
-               theme_wsj()+geom_smooth(method="lm")+
-               theme(axis.text.x = element_text(angle=65, vjust=0.3))+  
-               theme(plot.title    = element_text(size = rel(0.5)),
-               plot.subtitle = element_text(size = rel(0.5)),
-               axis.text.x   = element_text(vjust=0.6,size=8),
-               axis.text.y   = element_text(vjust=0.2,size=6),
-               axis.title    = element_text(size = rel(0.5)),
-               legend.position  = "right",
-               legend.direction ="vertical",
-               legend.title = element_text(size = rel(0.5)))
 
 
 
 ```
 
-### Median Alcohol content and Bitternes Vs state
+# Analysis
+
+### Total Breweries per state
+
+```{r}
+
+b_states <- breweries_ds %>% group_by(State) %>% count(State,Unabbreviated) %>% arrange(desc(n))
+b_states$Unabbreviated <- factor(b_states$Unabbreviated, levels = b_states$Unabbreviated) 
+
+ggplot(b_states, aes(x=Unabbreviated, y=n)) + 
+  geom_bar(stat="identity", width=.8, fill="tomato3") + 
+  labs(title="Ordered Bar Chart", 
+       subtitle="State Vs Number of Breweries", 
+       caption="Beer Analysis") + 
+  xlab("State")+
+  ylab("Total Breweries")+
+  theme_wsj()+
+  theme(axis.text.x = element_text(angle=80, vjust=0.4))+  
+  theme(plot.title    = element_text(size = rel(0.5)),
+  plot.subtitle = element_text(size = rel(0.5)),
+  axis.text.x   = element_text(vjust=0.6,size=8),
+  axis.title    = element_text(size = rel(0.5)),
+  legend.position  = "right",
+  legend.direction ="vertical",
+  legend.title = element_text(size = rel(0.2)))
+  
+
+```
+
+ 
+  
+### Median ABV Vs State
 * State Vs Median Alcohol content
 
 ```{r}
 
-abv_by_states <- imputed_df %>% select(State,ABV) %>% group_by(State) %>%  summarise(Median=as.numeric(median(ABV))) %>% arrange(desc(Median))
+abv_by_states <- imputed_df %>% select(State,Unabbreviated,ABV) %>% group_by(Unabbreviated) %>%  summarise(Median=as.numeric(median(ABV))) %>% arrange(desc(Median))
 
-abv_by_states$State <- factor(abv_by_states$State, levels = abv_by_states$State) 
+abv_by_states$Unabbreviated <- factor(abv_by_states$Unabbreviated, levels = abv_by_states$Unabbreviated) 
 
-ggplot(abv_by_states, aes(x=State, y=Median)) + 
+ggplot(abv_by_states, aes(x=Unabbreviated, y=Median)) + 
   geom_bar(stat="identity", width=.8, fill="tomato3") + 
   labs(title="Ordered Bar Chart", 
        subtitle="Median ABV Vs State", 
@@ -290,11 +382,11 @@ ggplot(abv_by_states, aes(x=State, y=Median)) +
   xlab("State")+
   ylab("Alcohol content")+
   theme_wsj()+
-  theme(axis.text.x = element_text(angle=65, vjust=0.6))+  
+  theme(axis.text.x = element_text(angle=80, vjust=0.8))+  
   theme(plot.title    = element_text(size = rel(0.5)),
   plot.subtitle = element_text(size = rel(0.5)),
   axis.text.x   = element_text(vjust=0.6,size=7),
-  axis.title    = element_text(size = rel(0.5)),
+  axis.title    = element_text(size = rel(0.4)),
   legend.position  = "right",
   legend.direction ="vertical",
   legend.title = element_text(size = rel(0.2)))
@@ -302,28 +394,33 @@ ggplot(abv_by_states, aes(x=State, y=Median)) +
 
 ```
 
-* State Vs Median Bitterness
+#### Interpretation
+ * As seen from the ordered bar plot DC and Kentucky has highest median ABV
+ * West Virginia has highest median IBU
+
+
+### Median IBU Vs State
 
 
 ```{r}
 
-ibu_by_states <- imputed_df %>% select(State,IBU) %>% group_by(State) %>%  summarise(Median=as.numeric(median(IBU))) %>% arrange(desc(Median))
+ibu_by_states <- imputed_df %>% select(State,Unabbreviated,IBU) %>% group_by(Unabbreviated) %>%  summarise(Median=as.numeric(median(IBU))) %>% arrange(desc(Median))
 
-ibu_by_states$State <- factor(ibu_by_states$State, levels = ibu_by_states$State) 
+ibu_by_states$Unabbreviated <- factor(ibu_by_states$Unabbreviated, levels = ibu_by_states$Unabbreviated) 
 
-ggplot(ibu_by_states, aes(x=State, y=Median)) + 
+ggplot(ibu_by_states, aes(x=Unabbreviated, y=Median)) + 
   geom_bar(stat="identity", width=.8, fill="tomato3") + 
   labs(title="Ordered Bar Chart", 
-       subtitle="Median IBU Vs State", 
+       subtitle="Median ABV Vs State", 
        caption="Beer Analysis") + 
   xlab("State")+
   ylab("Alcohol content")+
   theme_wsj()+
-  theme(axis.text.x = element_text(angle=65, vjust=0.6))+  
+  theme(axis.text.x = element_text(angle=80, vjust=0.8))+  
   theme(plot.title    = element_text(size = rel(0.5)),
   plot.subtitle = element_text(size = rel(0.5)),
   axis.text.x   = element_text(vjust=0.6,size=7),
-  axis.title    = element_text(size = rel(0.5)),
+  axis.title    = element_text(size = rel(0.4)),
   legend.position  = "right",
   legend.direction ="vertical",
   legend.title = element_text(size = rel(0.2)))
@@ -331,19 +428,21 @@ ggplot(ibu_by_states, aes(x=State, y=Median)) +
 
 ```
 
+#### Interpretation
+ * As seen from the ordered bar plot West Virginia has highest median IBU
+
 
 ### Distribution of ABV
-* boxplot Max ABV
+ * boxplot by Max ABV
+
 ```{r}
 
-ibu_by_states <- imputed_df %>% select(State,ABV) %>% group_by(State) %>%  arrange(desc(ABV))
+ibu_by_states <- imputed_df %>% select(State,Unabbreviated,ABV) %>% group_by(Unabbreviated) %>%  arrange(desc(ABV))
 
-ibu_by_states$State <- factor(ibu_by_states$State, levels = unique(ibu_by_states$State)) 
+ibu_by_states$Unabbreviated <- factor(ibu_by_states$Unabbreviated, levels = unique(ibu_by_states$Unabbreviated)) 
 
-str(ibu_by_states)
-
-ibu_by_states %>% ggplot(aes(y=ABV,x=State)) +
-                  geom_boxplot(aes(fill=State), alpha=0.8,show.legend = FALSE) + 
+ibu_by_states %>% ggplot(aes(y=ABV,x=Unabbreviated)) +
+                  geom_boxplot(aes(fill=Unabbreviated), alpha=0.8,show.legend = FALSE) + 
                   labs(title="Alcohol Content", 
                   caption="Beer Analysis") + 
                   xlab("State")+
@@ -362,20 +461,23 @@ ibu_by_states %>% ggplot(aes(y=ABV,x=State)) +
 
 ```
 
+#### Interpretation
+
+ * As shown above ordered bar plot State of Colorado has maximum alcoholic content with ABV=0.128
+
 ### Distribution of IBU
-* boxplot Max IBU
+ * boxplot by Max IBU
+ 
 ```{r}
 
-ibu_by_states <- imputed_df %>% select(State,IBU) %>% group_by(State) %>%  arrange(desc(IBU))
+ibu_by_states <- imputed_df %>% select(State,Unabbreviated,IBU) %>% group_by(Unabbreviated) %>%  arrange(desc(IBU))
 
-ibu_by_states$State <- factor(ibu_by_states$State, levels = unique(ibu_by_states$State)) 
-
-str(ibu_by_states)
+ibu_by_states$Unabbreviated <- factor(ibu_by_states$Unabbreviated, levels = unique(ibu_by_states$Unabbreviated)) 
 
 imputed_df %>% arrange(desc(IBU))
 
-ibu_by_states %>% ggplot(aes(y=IBU,x=State)) +
-                  geom_boxplot(aes(fill=State), alpha=0.8,show.legend = FALSE) + 
+ibu_by_states %>% ggplot(aes(y=IBU,x=Unabbreviated)) +
+                  geom_boxplot(aes(fill=Unabbreviated), alpha=0.8,show.legend = FALSE) + 
                   labs(title="IBU", 
                   caption="Beer Analysis") + 
                   xlab("State")+
@@ -394,30 +496,17 @@ ibu_by_states %>% ggplot(aes(y=IBU,x=State)) +
 
 ```
 
+#### Interpretation
 
-* density plot
+ * As shown above ordered bar plot State of Colorado has maximum bitterness IBU=156.99224
+ * Note this is imputed value. Originally IBU was not populated for Colorado
+
+### Density Plot - ABV
 
 ```{r}
 
-imputed_df %>% ggplot(aes(x=ABV,fill=State)) +
-               geom_histogram(bins=30) + 
-               labs(title="ABV Distribution", 
-               caption="Beer Asnalysis") + 
-               ylab("Alcohol content")+
-               theme_wsj()+
-               theme(axis.text.x = element_text(angle=65, vjust=0.6))+  
-               theme(plot.title    = element_text(size = rel(0.5)),
-               plot.subtitle = element_text(size = rel(0.5)),
-               axis.text.x   = element_text(vjust=0.6,size=7),
-               axis.title    = element_text(size = rel(0.5)),
-               legend.position  = "right",
-               legend.direction ="vertical",
-               legend.title = element_text(size = rel(0.2)))
-
-summary(imputed_df$ABV)
-
 imputed_df %>% ggplot(aes(x=ABV)) +
-               geom_density(aes(fill=State), alpha=0.8) + 
+               geom_density(aes(fill=Unabbreviated), alpha=0.8) + 
                labs(title="Density Plot", 
                caption="Beer Analysis") + 
                xlab("State")+
@@ -434,3 +523,35 @@ imputed_df %>% ggplot(aes(x=ABV)) +
 
 
 ```
+
+#### Interpretation
+
+ * As per box plot Alcohol content varies by State
+
+
+### Histogram - ABV
+
+```{r}
+
+imputed_df %>% ggplot(aes(x=ABV,fill=State)) +
+               geom_histogram(bins=30) + 
+               labs(title="ABV Distribution", 
+               caption="Beer Analysis") + 
+               ylab("Alcohol content")+
+               theme_wsj()+
+               theme(axis.text.x = element_text(angle=65, vjust=0.6))+  
+               theme(plot.title    = element_text(size = rel(0.5)),
+               plot.subtitle = element_text(size = rel(0.5)),
+               axis.text.x   = element_text(vjust=0.6,size=7),
+               axis.title    = element_text(size = rel(0.5)),
+               legend.position  = "right",
+               legend.direction ="vertical",
+               legend.title = element_text(size = rel(0.2)))
+
+```
+
+#### Interpretation
+
+ * Colorado is the state with highest alcohol content And Delaware is the lowest alcohol content. 
+   Overall Distribution of ABV is approximately normal.
+
