@@ -84,8 +84,16 @@ Codebook Provides additional details about code and data.
 |State          |  U.S. State where the brewery is located.|
 
 **Libraries:**
-* ggplot2
-* ggthemes
-* tidyverse
-* naniar
-* visdat
+
+|**Library** | **Use of library**               |
+|---------------|:------------------------------|
+| ggplot2       | Visualizations                |  
+| ggthemes      | Themes for ggplots            |  
+| prettydoc     | Theme for RMD                 |  
+| tidyverse     | Tidy data                     |  
+| naniar        | Missing data Visualizations   |  
+| visdat        | Missing data Visualizations   |  
+| mice          | Imputations                   |  
+| VIM           | Missing data patterns         |  
+* stringr
+* Hmisc
