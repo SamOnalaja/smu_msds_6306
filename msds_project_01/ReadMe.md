@@ -113,5 +113,14 @@ Codebook Provides additional details about code and data.
 | imputed_df | final imputed dataframe derived from bmerged_final_ds  |  
 
 
+**Program perfoms following steps:**
 
+1. Load Beers.csv(beers_ds),Breweries.csv(breweries_ds) and state_abbreviations.csv(states_ds)
+2. Remove Leading and trailing spaces in character variables
+3. Merge Breweries.csv and state_abbreviations.csv by using State field into breweries_ds
+4. Merge breweries_ds and beers_ds into bmerged_ds
+5. Delete 62 records that have both values IBU and ABV missing
+6. Create a regression model for imputation
+7. Impute field IBU 
+8. Perform analysis on this imputed data.
 
