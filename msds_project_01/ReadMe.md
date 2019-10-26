@@ -100,7 +100,7 @@ Codebook Provides additional details about code and data.
 
 **Variables in the Program:**
 
-|**Variable Name** | **Purpose**                   |
+|**Variable Names** | **Purpose**                   |
 |---------------|:---------------------------------|
 | beers_ds      | Beers.csv                        |  
 | breweries_ds  | Breweries.csv                    |  
