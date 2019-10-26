@@ -1,6 +1,6 @@
---- 
+---
 title: "Beer_Analysis"
-author: "Sachin Chavan"
+author: "Sachin Chavan, Jordan Salsman"
 date: "10/13/2019"
 output:
   html_document:
@@ -10,12 +10,12 @@ output:
     toc_float:
       collapsed: no
       smooth_scroll: no
---- 
+---
 
 # Introduction
 This is an analysis of a dataset containing beer and brewery data. The dataset contains 2410 beers from 558 breweries in 50 states of the United States and the District of Columbia. The goal was to explore the data set and look for interesting features of the data. Once the data was explored, the analysis focused on how international bitterness unit (IBU) and alcohol by volume (ABV) of beer are distributed over states and the relationship between IBU and ABV. The analysis also includes a discussion of the missing data and how the missing data impacts making insights from the dataset.
 
-### Load following libraries
+### Load Libraries
 
 *  ggplot2  - visualizations
 *  ggthemes - Themes
@@ -34,9 +34,13 @@ library(mice)
 library(VIM)
 library(stringr)
 library(Hmisc)
+library(e1071)
+library(caret)
+library(class)
+library(ROCR)
 ```
 
-### Load data into memory from csv 
+### Load Data
 
 *  Load Breweries from csv
 *  Load Beers from csv 
@@ -503,9 +507,9 @@ ibu_by_states %>% ggplot(aes(y=IBU,x=Unabbreviated)) +
 ```{r}
 
 imputed_df %>% ggplot(aes(x=ABV)) +
-               geom_density(aes(fill=Unabbreviated), alpha=0.8) + 
+               geom_density(aes(fill=State), alpha=0.8) + 
                labs(title="Density Plot", 
-               caption="Beer Analysis") + 
+               caption="Beer Analysis",fill="States") + 
                xlab("State")+
                ylab("Alcohol content")+
                theme_wsj()+
@@ -516,7 +520,7 @@ imputed_df %>% ggplot(aes(x=ABV)) +
                axis.title    = element_text(size = rel(0.5)),
                legend.position  = "right",
                legend.direction ="vertical",
-               legend.title = element_text(size = rel(0.2)))
+               legend.title = element_text(size = rel(0.5)))
 
 
 ```
@@ -543,12 +547,160 @@ imputed_df %>% ggplot(aes(x=ABV,fill=State)) +
                axis.title    = element_text(size = rel(0.5)),
                legend.position  = "right",
                legend.direction ="vertical",
-               legend.title = element_text(size = rel(0.2)))
+               legend.title = element_text(size = rel(0.5)))
 
 ```
 
 #### Interpretation
 
  * Colorado is the state with highest alcohol content And Delaware is the lowest alcohol content. 
-   Overall Distribution of ABV is approximately normal.
+ * Overall Distribution of ABV is approximately normal.
+
+# Model Building
+### IPAs Vs Other Ales
+ * Relationship between IPAs and other Ales
+ 
+```{r}
+imputed_df$Style <- toupper(imputed_df$Style)
+IPA <- imputed_df %>% filter(str_detect(Style, "IPA")) 
+IPA$Style <- "IPA"
+ALE <- imputed_df %>% filter(str_detect(Style, "IPA" , negate = TRUE)) %>% filter(str_detect(Style, "ALE"))
+ALE$Style <- "Ale"
+mod_df <- rbind(IPA, ALE)
+mod_df %>% ggplot(aes(x=ABV,y=IBU,color=Style))+geom_point() +
+           labs(title="IBU Vs ABV", 
+           caption="Beer Analysis") + 
+           xlab("State")+
+           ylab("Alcohol content")+
+           theme_wsj()+
+           theme(axis.text.x = element_text(angle=65, vjust=0.6))+  
+           theme(plot.title    = element_text(size = rel(0.5)),
+                 plot.subtitle = element_text(size = rel(0.5)),
+                 axis.text.x   = element_text(vjust=0.6,size=7),
+                 axis.title    = element_text(size = rel(0.5)),
+                 legend.position  = "right",
+                 legend.direction ="vertical",
+                 legend.title = element_text(size = rel(0.5)))
+```
+
+#### Interpretation
+
+ * Visual evidence of Linear relationship between IPAs and other Ales
+ * Clear distinction between two types of Ales
+ * IPA tends to be more Bitter compared to Other Ales
+
+
+### Knn Classifier
+ * This Model predicts Style usign ABV and IBU
+ 
+```{r}
+set.seed(7)
+iterations = 100
+k = 30
+Acc_holder = matrix(nrow = iterations, ncol = k)
+for(j in 1:iterations)
+{
+smp <- floor(0.75 * nrow(mod_df))
+train_ind <- sample(seq_len(nrow(mod_df)), size = smp)
+imputed_train <- mod_df[train_ind, ]
+imputed_test  <- mod_df[-train_ind, ]
+  for(i in 1:k)
+  {
+  classifications <- knn(imputed_train[,c(9,10)], imputed_test[,c(9,10)], imputed_train$Style,     prob = TRUE, k = i)
+  CM <- confusionMatrix(table(classifications, imputed_test$Style))
+    Acc_holder[j,i] = CM$overall[1]
+  }
+}
+MeanAcc = colMeans(Acc_holder)
+which.max(MeanAcc)
+k <- c(1:30)
+Mean_Acc_df <- data_frame(MeanAcc)
+Mean_Acc_df <- cbind(k, Mean_Acc_df)
+Mean_Acc_df %>% ggplot(aes(x = k, y= MeanAcc)) +
+               geom_line(color = "blue", alpha = .8) +
+               labs(title="Cross-Validating Different KNN Models", 
+               caption="KNN Score Across K's") + 
+               xlab("K's")+
+               ylab("Prediction Accuracy")+
+               theme_wsj()+
+               theme(axis.text.x = element_text(angle=65, vjust=0.6))+  
+               theme(plot.title    = element_text(size = rel(0.5)),
+               plot.subtitle = element_text(size = rel(0.5)),
+               axis.text.x   = element_text(vjust=0.6,size=7),
+               axis.title    = element_text(size = rel(0.5)),
+               legend.position  = "right",
+               legend.direction ="vertical",
+               legend.title = element_text(size = rel(0.2)))
+classifications <- knn(imputed_train[,c(9,10)], imputed_test[,c(9,10)], imputed_train$Style,     prob = TRUE, k = 6)
+CM <- confusionMatrix(table(classifications, imputed_test$Style))
+CM
+
+```
+
+### Naive Bayes
+#### Further exploration
+ * Separating Beers into known Light and Dark   
+ * Only Beers that are definitely Light or Dark are used
+
+```{r}
+imputed_df$Style <- toupper(imputed_df$Style)
+Blonde <- imputed_df %>%filter(str_detect(Style, "BLONDE"))
+Blonde$Style <- "Light"
+Light <- imputed_df %>%filter(str_detect(Style, "LIGHT"))
+Light$Style <- "Light"
+Cream <- imputed_df %>%filter(str_detect(Style, "CREAM"))
+Cream$Style <- "Light"
+Shandy <- imputed_df %>%filter(str_detect(Style, "SHANDY"))
+Shandy$Style <- "Light"
+Porter <- imputed_df %>%filter(str_detect(Style, "PORTER"))
+Porter$Style <- "Dark"
+Stout <- imputed_df %>%filter(str_detect(Style, "STOUT"))
+Stout$Style <- "Dark"
+Dark <- imputed_df %>%filter(str_detect(Style, "DARK"))
+Dark$Style <- "Dark"
+Black <- imputed_df %>%filter(str_detect(Style, "BLACK"))
+Black$Style <- "Dark"
+color <- rbind(Blonde,Light,Porter,Stout,Dark,Black,Cream,Shandy)
+```
+
+
+ * Naive Bayes to classify Light Vs. Dark Beers
+ * ROC Curve plot  
+ * Confusion Matrix
+
+```{r}
+iterations = 100
+AccHolder = numeric(100)
+SensHolder = numeric(100)
+SpecHolder = numeric(100)
+for(seed in 1:iterations)
+{
+    set.seed(seed)
+    Indices = sample(seq(1:length(color$Style)),round(.75*length(color$Style)))
+    train_color = color[Indices,]
+    test_color = color[-Indices,]
+    model = naiveBayes(train_color[,c("ABV", "IBU", "State")],factor(train_color$Style, labels     = c("Light", "Dark")))
+    CM = confusionMatrix(table(factor(test_color$Style, labels = c("Light",   "Dark")),predict(model,test_color[,c("ABV", "IBU", "State")])))
+    AccHolder[seed] = CM$overall[1]
+    SensHolder[seed] = CM$byClass[1]
+    SpecHolder[seed] = CM$byClass[2]
+}
+mean(AccHolder)
+mean(SensHolder)
+mean(SpecHolder)
+which.max(AccHolder)
+which.max(SensHolder)
+which.max(SpecHolder)
+set.seed(38)
+Indices = sample(seq(1:length(color$Style)),round(.75*length(color$Style)))
+train_color = color[Indices,]
+test_color = color[-Indices,]
+model = naiveBayes(train_color[,c("ABV", "IBU", "State")],factor(train_color$Style, labels = c("Light", "Dark")))
+CM = confusionMatrix(table(factor(test_color$Style, labels = c("Light", "Dark")),predict(model,test_color[,c("ABV", "IBU", "State")])))
+CM
+pred_nb <- predict(model,test_color[,c("ABV", "IBU", "State")], type = 'raw')
+pred <- prediction(pred_nb[, 2], test_color$Style)
+nb.prff = performance(pred, "tpr", "fpr")
+plot(nb.prff,main="ROC Curve")
+```
 
