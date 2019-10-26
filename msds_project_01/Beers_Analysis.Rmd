@@ -76,7 +76,8 @@ str(bmerged_ds)
 ```
 
 ### Merged dataset
-* First and last 10 records from merged set
+* First and last 10 records from merged set - bmerged_ds
+
 ```{r tidy}
 head(bmerged_ds)
 tail(bmerged_ds)
