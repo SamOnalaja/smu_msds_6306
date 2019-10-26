@@ -55,7 +55,7 @@ The datasets descriptions are as follows.
 ### Datasets
 * <a href="https://github.com/sachinac/smu_msds_6306/blob/master/msds_project_01/data/Beers.csv"> Beers.csv </a>
 * <a href="https://github.com/sachinac/smu_msds_6306/blob/master/msds_project_01/data/Breweries.csv"> Breweries.csv </a> 
-
+* <a href="https://github.com/sachinac/smu_msds_6306/blob/master/msds_project_01/data/state_abbreviations.csv"> state_abbreviations.csv </a>
 
 ## Codebook
 
@@ -84,8 +84,43 @@ Codebook Provides additional details about code and data.
 |State          |  U.S. State where the brewery is located.|
 
 **Libraries:**
-* ggplot2
-* ggthemes
-* tidyverse
-* naniar
-* visdat
+
+|**Library**    | **Purpose**                   |
+|---------------|:------------------------------|
+| ggplot2       | Visualizations                |  
+| ggthemes      | Themes for ggplots            |  
+| prettydoc     | Theme for RMD                 |  
+| tidyverse     | Tidy data                     |  
+| naniar        | Missing data Visualizations   |  
+| visdat        | Missing data Visualizations   |  
+| mice          | Imputations                   |  
+| VIM           | Missing data patterns         |  
+| stringr       | Strings processing            |           
+| Hmisc         | for Capitalize function       |
+
+**Variables in the Program:**
+
+|**Variable Names** | **Purpose**                   |
+|---------------|:---------------------------------|
+| beers_ds      | Beers.csv                        |  
+| breweries_ds  | Breweries.csv                    |  
+| states_ds     | state_abbreviations.csv          |  
+| bmerged_ds    | beers_ds+breweries_ds+states_ds  |  
+| bmerged_ds    | beers_ds+breweries_ds+states_ds  |  
+| bmerged_final_ds | After deleting missing data  |  
+| model_ibu | regression model without transformation  |  
+| model_log_ibu | regression model with transformation  |  
+| imputed_df | final imputed dataframe derived from bmerged_final_ds  |  
+
+
+**Program perfoms following steps:**
+
+1. Load Beers.csv(beers_ds),Breweries.csv(breweries_ds) and state_abbreviations.csv(states_ds)
+2. Remove Leading and trailing spaces in character variables
+3. Merge Breweries.csv and state_abbreviations.csv by using State field into breweries_ds
+4. Merge breweries_ds and beers_ds into bmerged_ds
+5. Delete 62 records that have both values IBU and ABV missing
+6. Create a regression model for imputation
+7. Impute field IBU 
+8. Perform analysis on this imputed data.
+
