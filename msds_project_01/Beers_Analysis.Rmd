@@ -485,7 +485,7 @@ ibu_by_states %>% ggplot(aes(y=IBU,x=Unabbreviated)) +
                   theme(axis.text.x = element_text(angle=65, vjust=0.6))+  
                   theme(plot.title    = element_text(size = rel(0.5)),
                   plot.subtitle = element_text(size = rel(0.5)),
-                  axis.text.x   = element_text(vjust=0.6,size=7),
+                  axis.text.x   = element_text(vjust=0.6,size=9),
                   axis.title    = element_text(size = rel(0.5)),
                   legend.position  = "right",
                   legend.direction ="vertical",
@@ -704,7 +704,7 @@ plot(nb.prff,main="ROC Curve")
 
 # Conclusion
 
-  **Followng are insights from analysis**
+  **Following are insights from analysis**
   
   * There is evidence that data is missing at random
   * There appears to be geographic clustering of median ABV and IBU
