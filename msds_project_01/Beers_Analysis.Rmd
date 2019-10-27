@@ -65,7 +65,6 @@ bmerged_ds   <- merge(breweries_ds,beers_ds,by.x="Brew_ID",by.y="Brewery_id")
 names(bmerged_ds)[3] <- "BreweryName"
 names(bmerged_ds)[7] <- "BeerName"
 
-attach(bmerged_ds)
 ```
 
 ### Structures of the datasets
@@ -329,10 +328,7 @@ imputed_df %>% ggplot(aes(x=ABV,y=IBU,color=imputed))+
                legend.direction ="vertical",
                legend.title = element_text(size = rel(0.5)))
 
-
-
-
-
+attach(imputed_df)
 ```
 
 # Analysis
@@ -341,7 +337,9 @@ imputed_df %>% ggplot(aes(x=ABV,y=IBU,color=imputed))+
 
 ```{r}
 
-b_states <- breweries_ds %>% group_by(State) %>% count(State,Unabbreviated) %>% arrange(desc(n))
+b_states <- breweries_ds %>% group_by(State) %>% 
+            count(State,Unabbreviated) %>% arrange(desc(n))
+
 b_states$Unabbreviated <- factor(b_states$Unabbreviated, levels = b_states$Unabbreviated) 
 
 ggplot(b_states, aes(x=Unabbreviated, y=n)) + 
@@ -371,7 +369,8 @@ ggplot(b_states, aes(x=Unabbreviated, y=n)) +
 
 ```{r}
 
-abv_by_states <- imputed_df %>% select(State,Unabbreviated,ABV) %>% group_by(Unabbreviated) %>%  summarise(Median=as.numeric(median(ABV))) %>% arrange(desc(Median))
+abv_by_states <- imputed_df  %>% group_by(Unabbreviated) %>% 
+                 summarise(Median=as.numeric(median(ABV))) %>% arrange(desc(Median))
 
 abv_by_states$Unabbreviated <- factor(abv_by_states$Unabbreviated, levels = abv_by_states$Unabbreviated) 
 
@@ -405,7 +404,8 @@ ggplot(abv_by_states, aes(x=Unabbreviated, y=Median)) +
 
 ```{r}
 
-ibu_by_states <- imputed_df %>% select(State,Unabbreviated,IBU) %>% group_by(Unabbreviated) %>%  summarise(Median=as.numeric(median(IBU))) %>% arrange(desc(Median))
+ibu_by_states <- imputed_df %>% group_by(Unabbreviated) %>%  
+                 summarise(Median=as.numeric(median(IBU))) %>% arrange(desc(Median))
 
 ibu_by_states$Unabbreviated <- factor(ibu_by_states$Unabbreviated, levels = ibu_by_states$Unabbreviated) 
 
@@ -438,7 +438,7 @@ ggplot(ibu_by_states, aes(x=Unabbreviated, y=Median)) +
 
 ```{r}
 
-ibu_by_states <- imputed_df %>% select(State,Unabbreviated,ABV) %>% group_by(Unabbreviated) %>%  arrange(desc(ABV))
+ibu_by_states <- imputed_df %>%  group_by(State) %>% arrange(desc(ABV))
 
 ibu_by_states$Unabbreviated <- factor(ibu_by_states$Unabbreviated, levels = unique(ibu_by_states$Unabbreviated)) 
 
@@ -471,11 +471,9 @@ ibu_by_states %>% ggplot(aes(y=ABV,x=Unabbreviated)) +
  
 ```{r}
 
-ibu_by_states <- imputed_df %>% select(State,Unabbreviated,IBU) %>% group_by(Unabbreviated) %>%  arrange(desc(IBU))
+ibu_by_states <- imputed_df %>% group_by(Unabbreviated) %>%  arrange(desc(IBU))
 
 ibu_by_states$Unabbreviated <- factor(ibu_by_states$Unabbreviated, levels = unique(ibu_by_states$Unabbreviated)) 
-
-imputed_df %>% arrange(desc(IBU))
 
 ibu_by_states %>% ggplot(aes(y=IBU,x=Unabbreviated)) +
                   geom_boxplot(aes(fill=Unabbreviated), alpha=0.8,show.legend = FALSE) + 
@@ -704,3 +702,12 @@ nb.prff = performance(pred, "tpr", "fpr")
 plot(nb.prff,main="ROC Curve")
 ```
 
+# Conclusion
+
+  **Followng are insights from analysis**
+  
+  * There is evidence that data is missing at random
+  * There appears to be geographic clustering of median ABV and IBU
+  * Most beers have moderate Alcohol content (5 to 6.7%)
+  * There is evidence of linear relationship between IBU and ABV
+  
