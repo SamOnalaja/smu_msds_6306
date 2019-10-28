@@ -43,7 +43,7 @@ The datasets descriptions are as follows.
 ### Presentation
 
 * <a href="https://github.com/sachinac/smu_msds_6306/blob/master/msds_project_01/Sachin_Chavan_DDS_Case_Study01.pptx"> Powerpoint </a>
-* <a href="https://youtu.be/2xFqL47Ht3g"> Youtube Video </a>
+* <a href="https://youtu.be/-geUU2rAsj4"> Youtube Video </a>
 
 ### Analysis Document
 
