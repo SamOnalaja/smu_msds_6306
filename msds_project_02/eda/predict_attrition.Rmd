@@ -1,0 +1,1004 @@
+---
+title: "Predict Employee Attrition"
+author: "Sachin Chavan"
+date: "11/30/2019"
+output:
+  html_document:
+    code_folding: show
+    highlight: zenburn
+    keep_md: yes
+    number_sections: yes
+    theme: journal    
+    df_print: paged
+    html_theme: readable
+    toc: yes
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+---
+
+# Introduction
+
+DDSAnalytics is an analytics company that specializes in talent management solutions for Fortune 100 companies. Talent management is defined as the iterative process of developing and retaining employees. It may include workforce planning, employee training programs, identifying high-potential employees and reducing/preventing voluntary employee turnover (attrition). To gain a competitive edge over its competition, DDSAnalytics is planning to leverage data science for talent management. The executive leadership has identified predicting employee turnover as its first application of data science for talent management. Before the business green lights the project, they have tasked us to conduct an analysis of existing employee data. This R markdown does detailed statistical analysis of the given datasets and contains code,plots and all hypothesis test with conclusion. It also contains code and its output that was written to build predictive model as requested by talent management firm. 
+
+Along with this R code, we also built an app to perform EDA and interactive plots. We have posted this app on the web. <br>
+
+Please visit the app on this link <br>
+<font color="Blue">
+https://sachinac.shinyapps.io/msds_rshiny_cs02/
+</font>
+
+# Data Description
+
+Dataset contains record of 870 employees and 36 different attributes that can be utitlized to find pattern of attrition and to build a model to predict attrition.
+Data is clean and our initial investigation found nothing suspicious. For more details please keep reading following sections.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(naniar)
+library(dplyr)
+library(ggplot2)
+library(ggcorrplot)
+library(gridExtra)
+library(grid)
+library(ggthemes)
+library(sqldf)
+library(plotly) 
+```
+
+
+## Load data
+
+```{r}
+msds_cs02_ds <- read.csv('../data/CaseStudy2-data.csv',header=TRUE)
+```
+
+## Original Structure
+
+```{r}
+str(msds_cs02_ds)
+```
+
+## Data fields and Types
+
+Let's take a closer look at structure of the dataset
+
+We can categorized fields as follows:
+
+
+* **Non Predictors** 
+  + ID 
+  + EmployeeNumber
+  + EmployeeCount
+  + StandardHours
+  + Over18<br>  
+
+* **Nominal Categorical Predictors :**  
+  + BusinessTravel
+  + Department
+  + EducationField
+  + Gender
+  + JobRole
+  + MaritalStatus
+  + OverTime<br>  
+
+* **Ordinal Categorical Predictors :**
+  + Education
+  + EnvironmentSatisfaction
+  + JobInvolvement
+  + JobLevel
+  + JobSatisfaction
+  + PerformanceRating
+  + RelationshipSatisfaction
+  + StockOptionLevel
+  + WorkLifeBalance<br>  
+
+* **Numerical Predictors :**  
+  + Age
+  + DailyRate
+  + DistanceFromHome
+  + HourlyRate
+  + MonthlyIncome
+  + MonthlyRate
+  + NumCompaniesWorked
+  + PercentSalaryHike
+  + TotalWorkingYears
+  + TrainingTimesLastYear
+  + YearsAtCompany
+  + YearsInCurrentRole
+  + YearsSinceLastPromotion
+  + YearsWithCurrManager<br>  
+
+* **Response Variable :**  
+  + Attrition (for classification model)
+  + MonthlyIncome (for regression model) <br>  
+
+<font size=4>
+<b>  
+Nominal predictors are numeric fields in the dataset. However, we should change it to factors to treat them as categorical variables.
+</b>
+</font>
+
+```{r}
+msds_cs02_ds$Education                <- as.factor(msds_cs02_ds$Education)
+msds_cs02_ds$EnvironmentSatisfaction  <- as.factor(msds_cs02_ds$EnvironmentSatisfaction)
+msds_cs02_ds$JobInvolvement           <- as.factor(msds_cs02_ds$JobInvolvement)      
+msds_cs02_ds$JobLevel                 <- as.factor(msds_cs02_ds$JobLevel)
+msds_cs02_ds$JobSatisfaction          <- as.factor(msds_cs02_ds$JobSatisfaction) 
+msds_cs02_ds$PerformanceRating        <- as.factor(msds_cs02_ds$PerformanceRating)
+msds_cs02_ds$RelationshipSatisfaction <- as.factor(msds_cs02_ds$RelationshipSatisfaction)
+msds_cs02_ds$StockOptionLevel         <- as.factor(msds_cs02_ds$StockOptionLevel) 
+msds_cs02_ds$WorkLifeBalance          <- as.factor(msds_cs02_ds$WorkLifeBalance)
+```
+
+## Final Structure
+
+<b>
+  Final structure to continue with analysis
+</b>
+
+```{r}
+
+str(msds_cs02_ds)
+
+# Create list for different types of variables for later use
+
+non_predictors <- c('ID','EmployeeNumber','EmployeeCount','StandardHours','Over18')
+  
+nom_qual_predictors <- c('BusinessTravel','Department','EducationField',
+                         'Gender','JobRole','MaritalStatus','OverTime')
+  
+ord_qual_predictors <- c('Education','EnvironmentSatisfaction','JobInvolvement','JobLevel',
+                         'JobSatisfaction','PerformanceRating','RelationshipSatisfaction',
+                         'StockOptionLevel','WorkLifeBalance')
+
+num_predictors <- c('Age','DailyRate','DistanceFromHome','HourlyRate',
+                    'MonthlyRate','NumCompaniesWorked','PercentSalaryHike','TotalWorkingYears',
+                    'TrainingTimesLastYear','YearsAtCompany','YearsInCurrentRole',
+                    'YearsSinceLastPromotion','YearsWithCurrManager') 
+
+```
+
+
+# Explore the data
+
+Lets start to get some basic insights from the dataset.
+
+## Total Employees
+<font size=4>
+Number of employees per Department. As clearly seen from the pie chart R & D is the major department for **DDS Analytics** followed by Sales and HR.
+</font>
+
+```{r}
+  df <- sqldf("select Department,count(*) employee_count from msds_cs02_ds group by  Department")
+  df
+
+  p  <- plot_ly(df, labels = ~Department, values = ~employee_count, type = 'pie') %>%
+                 layout(title = 'Number of employees per Department',
+                 xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                 yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+  p
+```
+
+## Mean Age
+
+<font size=4>
+ Mean age of the organization is 37 <br>
+ Median age of the organization is 35 <br>
+ Mean Age of attrition 33 <br>
+ Median Age of attrtion is 32
+</font>
+
+
+```{r}
+  age_Attrition     <- msds_cs02_ds %>% filter(Attrition=='Yes') %>% select(Age)
+  age_non_attrition <- msds_cs02_ds %>% filter(Attrition=='No') %>% select(Age)
+  
+
+p <- plot_ly(alpha = 0.6) %>%
+     add_histogram(x = ~age_non_attrition$Age+1) %>%
+     add_histogram(x = ~age_Attrition$Age) %>%
+     layout(title = 'Histogram',
+     barmode = "overlay",showlegend = F,xaxis = list(title = "Attrition(Yellow) and No Attrition (Blue)"))
+       
+p
+
+
+mean(msds_cs02_ds$Age)
+median(msds_cs02_ds$Age)
+
+mean(age_Attrition$Age)
+median(age_Attrition$Age)
+
+
+```
+
+
+
+
+## Attrition
+
+let's analyze Attrition from the dataset
+
+### Attrition Rate
+
+Total Employees     - 870<br>
+Employees Attrition - 140
+
+```{r}
+   df <- sqldf("select Attrition,count(*) Attrition_count from msds_cs02_ds group by  Attrition")
+   df
+
+   p  <- plot_ly(df, labels = ~Attrition, values = ~Attrition_count, type = 'pie') %>%
+                 layout(title = 'Attrition Rate',
+                 xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                 yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+   p
+
+```
+
+### Age
+
+<font size=4>
+
+Below plot shows agewise attrition pattern from the data. Attrition is higher for the age range - 18-30 and 55+
+
+</font>
+
+```{r}
+
+spineplot(Attrition~ Age, data = msds_cs02_ds)
+
+```
+
+### Department
+ 
+* As shown in pie chart 
+  + Sales department is the highest contributor to attrition (21.6%) 59 out of  273 employees
+  + Research and Development is the second highest with 13.3%. i.e. 75 out of 562 employees
+  + HR has only 6 in headcount 
+
+```{r}
+df_RandD <- sqldf("select Attrition,count(*) Attrition_count from msds_cs02_ds  where Department like 'Research%' group by  Attrition")
+df_RandD
+df_Sales <- sqldf("select Attrition,count(*) Attrition_count from msds_cs02_ds  where Department like 'Sales%' group by  Attrition")
+df_Sales
+df_hr    <- sqldf("select Attrition,count(*) Attrition_count from msds_cs02_ds  where Department like 'Human%' group by  Attrition")
+df_hr
+
+p <- plot_ly() %>%
+  add_pie(data = df_RandD ,labels = ~Attrition, values = ~Attrition_count,
+          title = "Research & Development", domain = list(x = c(0, 0.4), y = c(0.4, 1))) %>%
+  add_pie(data = df_Sales, labels = ~Attrition, values = ~Attrition_count,
+          title = "Sales", domain = list(x = c(0.6, 1), y = c(0.4, 1))) %>%
+  add_pie(data = df_hr, labels = ~Attrition, values = ~Attrition_count,
+          title = "Human Resource", domain = list(x = c(0.25, 0.75), y = c(0, 0.6))) %>%
+  layout(title = "Departmentwise Attrition", showlegend = T,
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+   
+p
+
+```
+
+
+### JobRole and Department
+
+This plot shows attrition by job role by taking department into account <r>
+
+<b>Following Jobroles are the topmost contributors to attrition</b>
+
+<ul>
+  <li>Sales Executives 33 </li>
+  <li>Research Scientist 32</li>
+  <li>Labortory Technicians 30</li>
+  <li>Sales Representative 24</li>
+</ul>  
+
+```{r}
+
+df <- sqldf("select Department,JobRole,count(*) Attrition_count from msds_cs02_ds  where Attrition='Yes' group by  Department,JobRole order by Attrition_count desc")
+
+p <- ggplotly(ggplot(data=df, aes(x=Department, y=Attrition_count, fill=JobRole)) +
+     geom_bar(stat="identity", position=position_dodge())+
+     geom_text(aes(label=Attrition_count),vjust = 2.1,position=position_dodge(width=0.8))+
+     theme_bw()+
+     theme(axis.text.x = element_text(angle=45, vjust=0.6)))
+
+p
+
+```
+
+
+### JobRole only
+
+This plot shows attrition by job role without taking department into account <r>
+<b> Topmost Jobroles that contributes to attrition</b>
+
+<ul>
+  <li>Sales Executives (23.6%) </li>
+  <li>Research Scientist (22.9%) </li>
+  <li>Labortory Technicians (21.4%)</li>
+  <li>Sales Representative (21.4%)</li>
+</ul>  
+
+
+```{r}
+
+df <- sqldf("select JobRole,count(*) Attrition_count from msds_cs02_ds  where Attrition='Yes' group by  JobRole order by Attrition_count desc")
+
+p <- df %>%
+     plot_ly(labels = ~JobRole, values = ~Attrition_count) %>%
+     add_pie(hole = 0.6) %>%
+     layout(title = "Attrition by Job Role",  showlegend = T,
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+p
+
+```
+
+### Gender
+
+```{r}
+count(msds_cs02_ds,Gender)
+df <- sqldf("select Department,Gender,count(*) Attrition_count from msds_cs02_ds  where Attrition='Yes' group by  Department,Gender order by Attrition_count desc")
+df
+p <- ggplotly(ggplot(data=df, aes(x=Department, y=Attrition_count, fill=Gender)) +
+     geom_bar(stat="identity", position=position_dodge())+
+     geom_text(aes(label=Attrition_count),vjust = 2.1,position=position_dodge(width=0.5))+
+     theme_bw()+
+     theme(axis.text.x = element_text(angle=45, vjust=0.5)))
+
+p
+
+df <- sqldf("select Gender,count(*) Attrition_count from msds_cs02_ds  where Attrition='Yes' group by Gender order by Attrition_count ")
+df
+p  <- plot_ly(df, labels = ~Gender, values = ~Attrition_count, type = 'pie') %>%
+                  layout(title = 'Genderwise Attrition',
+                  xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                  yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+p
+
+```
+
+### Gender by Dept
+
+```{r}
+
+df_RandD <- sqldf("select Gender,count(*) Attrition_count from msds_cs02_ds  where Attrition='Yes' and Department like 'Research%' group by  Gender")
+df_RandD
+df_Sales <- sqldf("select Gender,count(*) Attrition_count from msds_cs02_ds  where Attrition='Yes' and Department like 'Sales%' group by  Gender")
+df_Sales
+df_hr    <- sqldf("select Gender,count(*) Attrition_count from msds_cs02_ds  where Attrition='Yes' and Department like 'Human%' group by  Gender")
+df_hr
+
+p <- plot_ly() %>%
+  add_pie(data = df_RandD ,labels = ~Gender, values = ~Attrition_count,
+          title = "Research & Development", domain = list(x = c(0, 0.4), y = c(0.4, 1))) %>%
+  add_pie(data = df_Sales, labels = ~Gender, values = ~Attrition_count,
+          title = "Sales", domain = list(x = c(0.6, 1), y = c(0.4, 1))) %>%
+  add_pie(data = df_hr, labels = ~Gender, values = ~Attrition_count,
+          title = "Human Resource", domain = list(x = c(0.25, 0.75), y = c(0, 0.6))) %>%
+  layout(title = "Departmentwise Attrition", showlegend = T,
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+   
+p
+
+```
+
+### Top 4 
+
+Here are top 4 reasons that have contributed to attrition.
+
+<ul>
+  <li>Business Travel - Those who travel rarely or frequently (92.1%)</li>
+  <li>StockOptionLevel- Stock option level 0 and 1 - (89.3%)</li>
+  <li>Job Level - Job level 1 & 2 (81.8%)</li>
+  <li>Overtime - Those who overwork. Put extra time to work. (57.1%)</li>
+</ul>  
+
+
+```{r}
+
+df_travel  <- sqldf("select BusinessTravel,count(*) Attrition_count from msds_cs02_ds  where Attrition='Yes' group by BusinessTravel  ")
+
+df_joblevel <- sqldf("select JobLevel,count(*) Attrition_count from msds_cs02_ds  where Attrition='Yes' group by JobLevel")
+
+rownames(df_joblevel) <- c('JobLevel1','JobLevel2','JobLevel3','JobLevel4','JobLevel5')
+
+df_stocklevel <- sqldf("select StockOptionLevel,count(*) Attrition_count from msds_cs02_ds  where Attrition='Yes' group by StockOptionLevel")
+rownames(df_stocklevel) <- c('Stock0','Stock1','Stock2','Stock3')
+
+df_overtime <- sqldf("select Overtime,count(*) Attrition_count from msds_cs02_ds  where Attrition='Yes' group by Overtime")
+
+p1 <- plot_ly() %>%
+  add_pie(data = df_travel ,labels = ~BusinessTravel, values = ~Attrition_count,
+          title = "BusinessTravel", domain = list(row = 0, column = 0)) %>%
+  add_pie(data = df_joblevel, labels = ~rownames(df_joblevel), values = ~Attrition_count,
+          title = "JobLevel", domain = list(row = 0, column = 1)) %>%
+  add_pie(data = df_overtime ,labels = ~OverTime, values = ~Attrition_count,
+          title = "Overtime", domain = list(row = 1, column = 0)) %>%
+  add_pie(data = df_stocklevel, labels = ~rownames(df_stocklevel), values = ~Attrition_count,
+          title = "StockOptionLevel", domain = list(row = 1, column = 1)) %>%
+  layout(title = "Attrition Rate", showlegend = T,
+         grid=list(rows=2, columns=2),
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+p1
+```
+
+### Other
+
+```{r}
+df_jobinv <- sqldf("select JobInvolvement,count(*) Attrition_count from msds_cs02_ds  where Attrition='Yes' group by JobInvolvement")
+
+p  <- plot_ly(df_jobinv, labels = ~JobInvolvement, values = ~Attrition_count, type = 'pie') %>%
+                  layout(title = 'Attrition rate for job Involvement',
+                  xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                  yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+p
+
+```
+
+## Job Satisfaction
+
+Dataset contains Jobsatiscation field. We can get few insights about what makes employees more satisfied. We will be using proportions plots here to get clear picture.So Let's see.
+
+Assumption of level of satisfaction <br>
+ Level-1 - highly dissasfied <br>
+ Level-2 - dissatisfied  <br>
+ Level-3 - Satisfied  <br>
+ Level-4 - Highly satisfied  <br>
+
+### Attrition by Satisfaction Level
+
+Fisher's test on this feature tells us that at least one proportion is significantly different than others p-value < 0.05. Show later section of this markdown. First three levels contributes 80% to the attrition though. 
+
+```{r}
+df <- msds_cs02_ds %>% filter(Attrition=='Yes')  %>% count(JobSatisfaction)
+p  <- plot_ly(df, labels = ~JobSatisfaction, values = ~n, type = 'pie') %>%
+                layout(title = 'Attrition by job satisfaction level',
+                xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+p
+
+```
+
+### By Age
+
+<b>Interpretations from Spineplots</b><br>
+<ul>
+  <li> Proportions of highly satisfied employees is higher between age 30-35</li>
+  <li> Proportions of highly dissatisfied employees is higher between age 25-30,40-45 and 55+</li>
+</ul>  
+
+<b> Thats what density plot shows high and lows of satisfaction levels </b>
+
+```{r}
+spineplot(JobSatisfaction ~ Age, data = msds_cs02_ds)
+vcd::cd_plot(JobSatisfaction ~Age , data = msds_cs02_ds)
+```
+
+### Monthly Income
+<b>Interpretations from Spineplots</b><br>
+<ul>
+  <li> Proprotion of highly satified is highest for employees with monthly Income range 6000-8000</li>
+  <li> Proprotion of highly dissatisfied is highest for employees with monthly Income range 1081-4000 and 15000-18000</li>
+</ul>  
+
+Density plot show lows and highs of satisfaction for all incomes.
+min(msds_cs02_ds$MonthlyIncome)
+```{r}
+spineplot(JobSatisfaction ~ MonthlyIncome, data = msds_cs02_ds)
+vcd::cd_plot(JobSatisfaction~MonthlyIncome , data = msds_cs02_ds)
+```
+
+
+### Distance from Home
+
+As quite obvious employees closer to office are more satisfied compared to those who stay far. Spinogram and density plot shows the same.
+
+```{r}
+spineplot(JobSatisfaction ~ DistanceFromHome, data = msds_cs02_ds)
+vcd::cd_plot(JobSatisfaction ~DistanceFromHome , data = msds_cs02_ds)
+```
+
+
+### Other 
+
+Lower the age higher the attrition<br>
+Lower monthlyIncome higher the attrition<br>
+Higher NumCompaniesWorked higher the attrition<br>
+Less exprience higher attrition<br>
+
+```{r}
+opar <- par(mfrow = c(2, 3))
+par(opar)
+vcd::cd_plot(Attrition ~ Age, data = msds_cs02_ds, main = "Age")
+vcd::cd_plot(Attrition ~ DailyRate, data = msds_cs02_ds, main = "DailyRate")
+vcd::cd_plot(Attrition ~ HourlyRate, data = msds_cs02_ds, main = "HourlyRate")
+vcd::cd_plot(Attrition ~ MonthlyIncome, data = msds_cs02_ds, main = "MonthlyIncome")
+vcd::cd_plot(Attrition ~ NumCompaniesWorked, data = msds_cs02_ds, main = "NumCompaniesWorked")
+vcd::cd_plot(Attrition ~ PercentSalaryHike, data = msds_cs02_ds, main = "PercentSalaryHike")
+vcd::cd_plot(Attrition ~ TotalWorkingYears, data = msds_cs02_ds, main = "TotalWorkingYears")
+vcd::cd_plot(Attrition ~ TrainingTimesLastYear, data = msds_cs02_ds, main = "TrainingTimesLastYear")
+vcd::cd_plot(Attrition ~ YearsAtCompany, data = msds_cs02_ds, main = "YearsAtCompany")
+vcd::cd_plot(Attrition ~ YearsInCurrentRole, data = msds_cs02_ds, main = "YearsInCurrentRole")
+vcd::cd_plot(Attrition ~ YearsSinceLastPromotion, data = msds_cs02_ds, main = "YearsSinceLastPromotion")
+vcd::cd_plot(Attrition ~ YearsWithCurrManager, data = msds_cs02_ds, main = "YearsWithCurrManager")
+
+
+
+```
+
+# Hypothesis Tests 
+
+Run hypothesis tests to compare levels of different factors.
+
+Hypothesis : All levels of the factor have same effect on the attrition.<br>
+Alternate  : At least one level has different effect on the attrition than other levels.<br>
+
+## Ordinal Qualtitative variables
+
+```{r}
+i=1 
+while(i <= length(ord_qual_predictors)) {
+   index <- match(ord_qual_predictors[i], names(msds_cs02_ds))
+   hypothesis_test <- fisher.test(table(msds_cs02_ds[,c(index,3)]),simulate.p.value=TRUE)
+   print(paste("Feature ",ord_qual_predictors[i]," p-value ",round(hypothesis_test$p.value,2)))
+   i <- i + 1
+}
+
+```
+
+<font size=4>
+
+Fisher test was performed and from the above p-values returned by fishers' test we conclude that following factors are singificant (p-value < 0.05) i.e. at least one level of the factor is different than others.
+
+<ul>
+  <li>EnvironmentSatisfaction</li>
+  <li>JobInvolvement</li>
+  <li>JobLevel</li>
+  <li>JobSatisfaction</li>
+  <li>StockOptionLevel</li>
+  <li>WorkLifeBalance</li>
+</ul>  
+So these variables needs to be included for model selections.
+
+</font>
+
+## Nominal Qualtitative variables
+
+```{r}
+
+i=1 
+while(i <=length(nom_qual_predictors)) {
+   index <- match(nom_qual_predictors[i], names(msds_cs02_ds))
+   hypothesis_test <- fisher.test(table(msds_cs02_ds[,c(index,3)])[,c(2,1)],simulate.p.value=TRUE)
+   print(paste("Feature ",nom_qual_predictors[i]," p-value ",round(hypothesis_test$p.value,2)))
+   i <- i + 1
+}
+
+```
+<font size=4>
+
+Fisher test was performed and from the above p-values returned by fishers' test we conclude that following factors are singificant (p-value < 0.05) i.e. at least one level of the factor is different than others.
+
+<ul>
+  <li>Department</li>
+  <li>JobInvolvement</li>
+  <li>JobRole</li>
+  <li>MaritalStatus</li>
+  <li>OverTime</li>
+</ul>  
+
+So these variables needs to be included for model selections
+</font>
+
+<font size=4>
+
+<b>Key takeways from EDA</b>
+
+<ul>
+  <li>Mean age of attrition is 33</li>
+  <li>Major Attrition is at Job Level1 i.e. Research Scientist,Laboratory Technician and Sales Representative</li>
+  <li>Males have higher attrition rate compared to Females</li>
+  <li>Stock options make people more happy and has lowest contributor to attrition</li>
+  <li>Higher the job involvement lower the attrition</li>
+</ul>  
+
+<b> 
+From the analysis it looks there are few predictors like age, businessTravel,Joblevel,Overtime are highly important as they are major contributor to attrtion. But other fields also seems to be showing some variations to attrition (as per density plots) so we will keep all predictors to build model and will go from there.
+</b>
+
+</font>
+
+
+
+## Correlation Heatmap
+
+<font size=4>
+
+This heatmap shows multicollinearity exist in the numerical predictors. We have examined the correlated variables and removed manually.
+
+</font>
+Following variables had strong correlation <br>
+Age and TotalWorkingYears <br>
+YearsAtCompany and YearsAtCurrentRole<br>
+YearsAtCompany and YearsWithCurrentManager<br>
+YearsWithCurrentManager and YearsAtCurrentRole<br> 
+
+```{r}
+library("corrplot")
+corr <- round(cor(msds_cs02_ds[,num_predictors[-c(6,8,10,11,12,13)]]), 1)
+corr <- round(cor(msds_cs02_ds[,num_predictors]), 1)
+corrplot(corr, is.corr=FALSE)
+trace1 <- list(
+  uid = "b972e66a-6d9c-4cd1-a8fc-c533178a171b", 
+  type = "heatmap", 
+  x = num_predictors, 
+  y = rev(num_predictors), 
+  z = corr
+)
+data <- list(trace1)
+layout <- list(
+  xaxis = list(
+    side = "top", 
+    ticks = "outside",
+    title = "Correlations Heat Map"
+  )
+)
+p <- plot_ly()
+p <- add_trace(p, uid=trace1$uid, type=trace1$type, x=trace1$x, y=trace1$y, z=trace1$z)
+p <- layout(p, title=layout$title, xaxis=layout$xaxis)
+
+p
+
+
+```
+
+# Model Building
+
+## Classification Problem
+
+### Random Forest
+
+Here are top 5 predictors as per random forest <br>
+<br>
+* Overtime<br>
+* MonthlyIncome<br>
+* JobRole<br>
+* Age<br>
+* TotalWorkingYears<br>
+
+```{r}
+library(caret)
+library(randomForest)
+
+#
+# Predictors to be retained from EDA
+#
+
+fin_nom_qual_predictors <- nom_qual_predictors[-c(1,3,4)]
+fin_ord_qual_predictors <- ord_qual_predictors[-c(1,6,7)]
+fin_num_predictors <- num_predictors[-c(6,8,10,11,12,13)] #num_predictors[c(5,2,8,9,7)]
+#num_predictors[-c(8,10,12,13)]
+
+msds_cs02_mds <- msds_cs02_ds[, c(fin_nom_qual_predictors,fin_ord_qual_predictors,fin_num_predictors,"MonthlyIncome","Attrition")]
+
+sample_n(msds_cs02_mds, 4)
+# Split the data into training and test set
+set.seed(123)
+training.samples <- msds_cs02_mds$Attrition %>% createDataPartition(p = 0.8, list = FALSE)
+train.data  <- msds_cs02_mds[training.samples, ]
+test.data   <- msds_cs02_mds[-training.samples, ]
+
+# Weighting 
+model_weights <- ifelse(train.data$Attrition == "No",
+                        (1/table(train.data$Attrition)[1]) * 0.5,
+                        (1/table(train.data$Attrition)[2]) * 0.5)
+
+# Fit the model on the training set
+set.seed(123)
+model <- train(
+  Attrition ~., data = train.data, method = "rf",
+  trControl = trainControl("cv", number = 10,sampling="down"),
+  preProcess = c("center","scale"),
+#  weights = model_weights,
+  importance = TRUE
+  )
+
+
+# Best tuning parameter
+model$bestTune
+model$finalModel
+
+predicted.classes <- model %>% predict(test.data, type = 'raw')
+
+
+head(predicted.classes)
+mean(predicted.classes == test.data$Attrition)
+
+predicted.classes <- relevel(predicted.classes,ref="Yes")
+test.data$Attrition <- relevel(test.data$Attrition ,ref="Yes")
+CM <- confusionMatrix(table(predicted.classes, test.data$Attrition))
+CM
+
+caret::varImp(model)
+ggplot(caret::varImp(model)) + 
+geom_bar(stat = 'identity', fill = 'steelblue', color = 'black') + 
+ylab("Feature Importance - Random Forest ")+
+scale_y_continuous(limits = c(0, 105), expand = c(0, 0)) +
+theme_light()
+
+```
+
+### KNN classifier
+
+```{r}
+#
+# This library required for one hot encoding to convert categorical variables into numeric
+#
+library(dummies)
+#
+# Create separate dataframe of 30 predictors 1 target
+#
+knn_with_target_ds <- msds_cs02_ds[,c(fin_num_predictors,fin_nom_qual_predictors,fin_ord_qual_predictors,"MonthlyIncome","Attrition")] 
+
+knn_hot_encoded_ds <- dummy.data.frame(knn_with_target_ds,names=c(fin_nom_qual_predictors,fin_ord_qual_predictors))
+
+set.seed(123)
+training.samples <- knn_hot_encoded_ds$Attrition %>% createDataPartition(p = 0.8, list = FALSE)
+train.data  <- knn_hot_encoded_ds[training.samples, ]
+test.data   <- knn_hot_encoded_ds[-training.samples, ]
+
+#res.pca <- PCA(msds_cs02_ds[,fin_num_predictors], graph = FALSE,ncp=20)
+#res.pca$eig
+#corrplot(res.pca$var$cos2, is.corr=FALSE)
+#fviz_contrib(res.pca, choice = "var", axes = 1:7)
+
+# Fit the model on the training set
+set.seed(123)
+model <- train(
+  Attrition ~., data = train.data, method = "knn",
+  trControl = trainControl("cv", number = 10,sampling="smote"),
+  preProcess = c("center","scale"),
+  tuneLength = 20
+  )
+# Plot model accuracy vs different values of k
+plot(model)
+
+# Print the best tuning parameter k that
+# maximizes model accuracy
+model$bestTune
+predicted.classes <- model %>% predict(test.data)
+head(predicted.classes)
+
+predicted.classes   <- relevel(predicted.classes,ref="Yes")
+test.data$Attrition <- relevel(test.data$Attrition,ref="Yes")
+
+# Compute model accuracy rate
+mean(predicted.classes == test.data$Attrition)
+
+CM <- confusionMatrix(table(predicted.classes, test.data$Attrition))
+CM
+
+library(ROCR)
+pred <- prediction(as.numeric(if_else(predicted.classes=='Yes',1,0)), as.numeric(if_else(test.data$Attrition=='Yes',1,0)))
+nb.prff = performance(pred, "tpr", "fpr")
+plot(nb.prff,main="ROC Curve")
+
+caret::varImp(model)
+ggplot(caret::varImp(model)) + 
+geom_bar(stat = 'identity', fill = 'steelblue', color = 'black') + 
+ylab("Feature Importance - Knn Classification ")+
+scale_y_continuous(limits = c(0, 105), expand = c(0, 0)) +
+theme_light()
+
+```
+
+### Naive Bayes Classifier
+
+```{r warning=FALSE}
+library(klaR)
+
+#
+# Create separate dataframe of 30 predictors 1 target
+#
+
+nb_with_target_ds <- msds_cs02_ds[,c(fin_num_predictors,fin_nom_qual_predictors,fin_ord_qual_predictors,"Attrition")] 
+
+nb_hot_encoded_ds <- dummy.data.frame(nb_with_target_ds,names=c(fin_nom_qual_predictors,fin_ord_qual_predictors))
+# Inspect the data
+
+sample_n(nb_with_target_ds, 3)
+# Split the data into training and test set
+
+set.seed(123)
+training.samples <- nb_hot_encoded_ds$Attrition %>% createDataPartition(p = 0.8, list = FALSE)
+train.data  <- nb_hot_encoded_ds[training.samples, ]
+test.data   <- nb_hot_encoded_ds[-training.samples, ]
+
+
+# Fit the model
+#model <- NaiveBayes(Attrition ~., data = train.data)
+#model
+# Make predictions
+#predicted.classes <- model %>% predict(test.data)
+
+#pred <- prediction(pred_nb[, 2], test_color$Style)
+# Model accuracy
+#mean(predicted.classes$class == test.data$Attrition)
+
+set.seed(123)
+model <- train(Attrition ~., data = train.data, method = "nb", 
+               trControl = trainControl("cv", number = 10,sampling="down")
+               )
+
+# Make predictions
+predicted.classes <- model %>% predict(test.data)
+
+predicted.classes   <- relevel(predicted.classes,ref="Yes")
+test.data$Attrition <- relevel(test.data$Attrition,ref="Yes")
+
+# Compute model accuracy rate
+mean(predicted.classes == test.data$Attrition)
+
+CM <- confusionMatrix(table(predicted.classes, test.data$Attrition))
+CM
+
+
+caret::varImp(model)
+ggplot(caret::varImp(model)) + 
+geom_bar(stat = 'identity', fill = 'steelblue', color = 'black') + 
+ylab("Feature Importance -Naive Bayes ")+
+scale_y_continuous(limits = c(0, 105), expand = c(0, 0)) +
+theme_light()
+
+```
+
+
+## Regression Problem
+
+### Knn Regression Model
+
+
+```{r warning=FALSE}
+#
+# Create separate dataframe of 30 predictors 1 target
+#
+
+knn_reg_target_ds <- msds_cs02_ds[,c(fin_num_predictors,fin_nom_qual_predictors,fin_ord_qual_predictors, "MonthlyIncome")] 
+
+kg_hot_encoded_ds <- dummy.data.frame(knn_reg_target_ds,names=c(fin_nom_qual_predictors,fin_ord_qual_predictors))
+
+# Split the data into training and test set
+set.seed(123)
+training.samples <- kg_hot_encoded_ds$MonthlyIncome %>% createDataPartition(p = 0.8, list = FALSE)
+
+train.data  <- kg_hot_encoded_ds[training.samples, ]
+test.data   <- kg_hot_encoded_ds[-training.samples, ]
+
+# Fit the model on the training set
+set.seed(123)
+model_rg <- train( MonthlyIncome~., data = train.data, method = "knn",
+                trControl = trainControl("cv", number = 20),
+                preProcess = c("center","scale"),
+                tuneLength = 20
+              )
+# Plot model error RMSE vs different values of k
+
+
+# Best tuning parameter k that minimize the RMSE
+model$bestTune
+# Make predictions on the test data
+predictions <- model_rg %>% predict(test.data)
+
+head(predictions)
+# Compute the prediction error RMSE
+RMSE(predictions, test.data$MonthlyIncome)
+
+plot(predictions, test.data$MonthlyIncome)
+
+# Model performance metrics
+data.frame(
+  RMSE = RMSE(predictions, test.data$MonthlyIncome),
+  Rsquare = R2(predictions, test.data$MonthlyIncome)
+)
+
+
+p <- plot_ly( x = ~predictions, y = ~test.data$MonthlyIncome,
+        marker = list(size = 10,
+                       color = 'rgba(255, 182, 193, .9)',
+                       line = list(color = 'rgba(152, 0, 0, .8)',
+                                   width = 2))) %>%
+  layout(title = 'RMSE Plot (kNN)',
+         yaxis = list(zeroline = FALSE),
+         xaxis = list(zeroline = FALSE))
+p
+
+```
+
+
+### Penalized Regression Model (LASSO)
+
+
+```{r warning=FALSE}
+library(glmnet)
+#
+# Create separate dataframe of 30 predictors 1 target
+#
+mlp_reg_target_ds <- msds_cs02_ds[,c(fin_num_predictors,nom_qual_predictors,fin_ord_qual_predictors, "MonthlyIncome")] 
+
+#mlp_hot_encoded_ds <- dummy.data.frame(mlp_reg_target_ds,names=c(fin_nom_qual_predictors,fin_ord_qual_predictors))
+
+# Split the data into training and test set
+set.seed(123)
+training.samples <- mlp_reg_target_ds$MonthlyIncome %>% createDataPartition(p = 0.8, list = FALSE)
+train.data  <- mlp_reg_target_ds[training.samples, ]
+test.data <- mlp_reg_target_ds[-training.samples, ]
+
+
+# Predictor variables
+x <- model.matrix(MonthlyIncome~., train.data)[,-1]
+# Outcome variable
+y <- train.data$MonthlyIncome
+
+# Find the best lambda using cross-validation
+set.seed(123) 
+cv <- cv.glmnet(x, y, alpha = 1)
+# Display the best lambda value
+cv$lambda.min
+
+# Fit the final model on the training data
+model <- glmnet(x, y, alpha = 1, lambda = cv$lambda.min)
+# Dsiplay regression coefficients
+coef(model)
+summary(model$beta)
+
+# Make predictions on the test data
+x.test <- model.matrix(MonthlyIncome ~., test.data)[,-1]
+predictions <- model %>% predict(x.test) %>% as.vector()
+# Model performance metrics
+data.frame(
+  RMSE = RMSE(predictions, test.data$MonthlyIncome),
+  Rsquare = R2(predictions, test.data$MonthlyIncome)
+)
+
+
+p <- plot_ly( x = ~predictions, y = ~test.data$MonthlyIncome,
+        marker = list(size = 10,
+                       color = 'rgba(255, 182, 193, .9)',
+                       line = list(color = 'rgba(152, 0, 0, .8)',
+                                   width = 2))) %>%
+  layout(title = 'RMSE Plot(LASSO)',
+         yaxis = list(zeroline = FALSE),
+         xaxis = list(zeroline = FALSE))
+p
+
+
+
+```
+
+# Conclusion
+
+<font size=5>
+<b>Top 6 factors determined by Random Forest model. Three of which are matching to EDA</b>
+
+<ul>
+  <li>Stock Options</li>
+  <li>Overtime</li>
+  <li>Job Level</li>
+  <li>Age</li>
+  <li>Job Role</li>
+  <li>MonthlyIncome</li>
+</ul>  
+
+23 Research Scientist, Most of the lab technicians, 33 Sales Representative and Sales executive and few were both overloaded and without any stock options.<br>
+
+Our model has captured that accurately.
+
+</font>
+

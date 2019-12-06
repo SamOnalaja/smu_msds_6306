@@ -1,0 +1,191 @@
+---
+title: "Predict Attrition"
+author: "Sachin Chavan"
+runtime: shiny
+output: 
+  flexdashboard::flex_dashboard:
+  source: embed    
+---
+
+```{r setup, include=FALSE}
+library(shiny)
+library(flexdashboard)
+library(tidyverse)
+library(ggplot2)
+library(stringi)
+library(plotly)
+library(treemapify)
+library(ggplotify)
+library(sqldf)
+
+rshiny_cs02_ds <- read.csv('msds_rshiny_cs02.csv',header = TRUE)
+
+theme_set(theme_bw())
+
+top_10 <- sqldf("select Department,JobRole,JobLevel,BusinessTravel,count(*) Attrition_count 
+                 from rshiny_cs02_ds where Attrition='Yes' group by Department,JobRole,
+                 JobLevel,BusinessTravel order by Attrition_count desc")    
+
+
+non_predictors <- c('ID','EmployeeNumber','EmployeeCount','StandardHours','Over18')
+  
+nom_qual_predictors <- c('BusinessTravel','Department','EducationField',
+                         'Gender','JobRole','MaritalStatus','OverTime')
+  
+ord_qual_predictors <- c('Education','EnvironmentSatisfaction','JobInvolvement','JobLevel',
+                         'JobSatisfaction','PerformanceRating','RelationshipSatisfaction',
+                         'StockOptionLevel','WorkLifeBalance')
+
+num_predictors <- c('Age','DailyRate','DistanceFromHome','HourlyRate',
+                    'MonthlyRate','NumCompaniesWorked','PercentSalaryHike','TotalWorkingYears',
+                    'TrainingTimesLastYear','YearsAtCompany','YearsInCurrentRole',
+                    'YearsSinceLastPromotion','YearsWithCurrManager') 
+
+
+dataset <- rshiny_cs02_ds[,c(num_predictors,"MonthlyIncome",nom_qual_predictors)]
+
+```
+
+Selections {.sidebar}
+===============================
+
+
+```{r}
+sliderInput('sampleSize', 'Sample Size', min=1, max=nrow(rshiny_cs02_ds),
+            value=min(10, nrow(rshiny_cs02_ds)), step=1, round=0)
+
+checkboxInput('jitter', 'Jitter', value = TRUE)
+checkboxInput('smooth', 'Smooth', value = TRUE)
+
+selectInput('x', 'X', names(dataset))
+
+selectInput('y', 'Y', names(dataset), names(dataset)[[3]])
+
+selectInput('facet_row', 'Facet Row',
+            c(None='.', ord_qual_predictors))
+selectInput('facet_col', 'Facet Column',
+            c(None='.', ord_qual_predictors))
+
+selectInput('pie_chart', 'Pie Chart',
+            c(ord_qual_predictors))
+
+
+#selectInput("State", selected="Alabama",label = "State Name", states,multiple=TRUE)
+
+
+
+#sliderInput("bin_s", label="Histogram Bin Size ", min=0, max=50, value=30, step=1, round=1, animate=TRUE,)
+```
+
+
+Tables
+===================================== 
+
+Column {.tabset .tabset-fade}
+-------------------------------------
+### Top Attrition
+
+
+```{r}
+DT::renderDataTable({
+
+    DT::datatable(top_10, rownames = FALSE,options = list(scrollX = TRUE))
+  
+})
+```
+
+### All Records
+
+```{r}
+DT::renderDataTable({
+  
+   DT::datatable(dataset(), rownames = FALSE,options = list(scrollX = TRUE))
+})
+
+```
+
+Scatterplots 
+===================================== 
+
+
+```{r}
+dataset <- reactive({
+  rshiny_cs02_ds[sample(nrow(rshiny_cs02_ds), input$sampleSize),]
+})
+
+
+renderPlotly({
+  
+   p <- ggplot(dataset(), aes_string(x=input$x, y=input$y,color="Attrition")) + geom_point()
+  #if (input$color != 'None')
+  #  p <- p + aes_string(color=input$color)
+  
+  facets <- paste(input$facet_row, '~', input$facet_col)
+  if (facets != '. ~ .')
+    p <- p + facet_grid(facets)
+  
+  if (input$jitter)
+    p <- p + geom_jitter()
+  if (input$smooth)
+    p <- p + geom_smooth()
+  
+    print(p)
+})
+```
+
+Pie Charts
+===================================== 
+
+
+```{r}
+renderPlotly({
+
+ 
+  
+ df <- sqldf(paste("select ",input$pie_chart," ,count(*) Attrition_count from rshiny_cs02_ds  
+                    where Attrition='Yes' group by ",input$pie_chart))
+  
+  
+  p  <- plot_ly(df,labels = ~df[,1], values = ~Attrition_count, type = 'pie') %>%
+                layout( title = paste('Attrition Rate - ',input$pie_chart),
+                        xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                        yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+  
+    print(p)
+})
+```
+
+Heatmap
+===================================== 
+
+
+```{r}
+renderPlotly({
+
+heatmap <= dataset()
+corr <- round(cor(rshiny_cs02_ds[,num_predictors]), 1)
+
+trace1 <- list(
+  uid = "b972e66a-6d9c-4cd1-a8fc-c533178a171b", 
+  type = "heatmap", 
+  x = num_predictors, 
+  y = rev(num_predictors), 
+  z = corr
+)
+data <- list(trace1)
+layout <- list(
+  title = "Correlations Heat Map", 
+  xaxis = list(
+    side = "top", 
+    ticks = "outside"
+  )
+)
+p <- plot_ly()
+p <- add_trace(p, uid=trace1$uid, type=trace1$type, x=trace1$x, y=trace1$y, z=trace1$z)
+p <- layout(p, title=layout$title, xaxis=layout$xaxis)
+
+print(p)
+})
+```
+

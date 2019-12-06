@@ -1,0 +1,12 @@
+name: msds_rshiny_cs02
+title: msds_rshiny_cs02
+username:
+account: sachinac
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1565023
+bundleId: 2642916
+url: https://sachinac.shinyapps.io/msds_rshiny_cs02/
+when: 1575528929.18844
+asMultiple: FALSE
+asStatic: FALSE
