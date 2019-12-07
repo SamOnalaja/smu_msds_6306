@@ -26,7 +26,7 @@ Goal
 
 ### Presentation
 * <a href="https://github.com/sachinac/smu_msds_6306/blob/master/msds_project_01/Sachin_Chavan_DDS_Case_Stu1.pptx"> Powerpoint </a>
-* <a href="https://youtu.be/-geUU2sj4"> Youtube Video </a>
+* <a href="https://youtu.be/AdvavD-SqRU"> Youtube Video </a>
 
 
 ### Analysis Document
