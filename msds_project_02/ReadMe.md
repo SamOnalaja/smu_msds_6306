@@ -32,7 +32,7 @@ Goal
 ### Analysis Document
 
 * <a href="https://github.com/sachinac/smu_msds_6306/blob/master/msds_project_02/eda/predict_attrition.Rmd"> R Markdown Source</a>
-* <a href="https://github.com/sachinac/smu_msds_6306/blob/master/msds_project_01/Beers_Analysis.html" target="_blank"> Knit Html file </a>
+* <a href="https://sachinac.github.io/cs02/predict_attrition.html" target="_blank"> Knit Html file </a>
 
 ### Datasets
 * <a href="https://github.com/sachinac/smu_msds_6306/blob/master/msds_project_02/data/CaseStudy2-data.csv"> CaseStudy2-data.csv </a>
